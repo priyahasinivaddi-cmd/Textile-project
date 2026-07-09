@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models.user import User
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserOut
 from app.services.user_service import create_user
 from app.utils.auth import create_access_token, verify_access_token, verify_password
 
@@ -31,6 +31,25 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         )
 
     return {"msg": "User registered"}
+
+
+@router.get("/users", response_model=list[UserOut])
+def list_users(db: Session = Depends(get_db)):
+    return db.query(User).order_by(User.id.desc()).all()
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.id == user_id).first()
+
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    db.delete(db_user)
+    db.commit()
 
 
 @router.post("/login")

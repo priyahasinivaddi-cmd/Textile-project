@@ -26,3 +26,49 @@ def ensure_database_schema():
         connection.execute(
             text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR DEFAULT 'operator'")
         )
+        connection.execute(
+            text("ALTER TABLE inventory ADD COLUMN IF NOT EXISTS waste_batch_id VARCHAR")
+        )
+        connection.execute(
+            text("ALTER TABLE inventory ADD COLUMN IF NOT EXISTS collection_date VARCHAR")
+        )
+        connection.execute(
+            text("ALTER TABLE inventory ADD COLUMN IF NOT EXISTS status VARCHAR DEFAULT 'Pending'")
+        )
+        connection.execute(
+            text("ALTER TABLE inventory ADD COLUMN IF NOT EXISTS uploaded_by VARCHAR DEFAULT 'Manufacturer'")
+        )
+        connection.execute(
+            text("ALTER TABLE inventory ADD COLUMN IF NOT EXISTS assigned_to VARCHAR DEFAULT 'Recycling Facility'")
+        )
+        connection.execute(
+            text(
+                "UPDATE inventory "
+                "SET waste_batch_id = CONCAT('WB-LEGACY-', id) "
+                "WHERE waste_batch_id IS NULL"
+            )
+        )
+        connection.execute(
+            text(
+                "UPDATE inventory "
+                "SET collection_date = CURRENT_DATE::VARCHAR "
+                "WHERE collection_date IS NULL"
+            )
+        )
+        connection.execute(
+            text("UPDATE inventory SET status = 'Pending' WHERE status IS NULL")
+        )
+        connection.execute(
+            text(
+                "UPDATE inventory "
+                "SET uploaded_by = 'Manufacturer' "
+                "WHERE uploaded_by IS NULL"
+            )
+        )
+        connection.execute(
+            text(
+                "UPDATE inventory "
+                "SET assigned_to = 'Recycling Facility' "
+                "WHERE assigned_to IS NULL"
+            )
+        )

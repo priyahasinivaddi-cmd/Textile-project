@@ -1,44 +1,40 @@
 import { useEffect, useState } from "react";
-import API from "../services/api";
+import { getInventory } from "../services/inventoryService";
 
 function Inventory() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    API.get("/inventory")
-      .then((res) => setData(res.data))
-      .catch((err) => console.log(err));
+    getInventory().then((res) => setData(res.data));
   }, []);
 
   return (
-    <div>
-      <h2>Inventory</h2>
-
-      <table border="1">
-        <thead>
-          <tr>
-            <th>Batch ID</th>
-            <th>Fabric</th>
-            <th>Source</th>
-            <th>Quantity</th>
-            <th>Color</th>
-            <th>Condition</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {data.map((item) => (
-            <tr key={item.id}>
-              <td>{item.batch_id}</td>
-              <td>{item.fabric_type}</td>
-              <td>{item.source}</td>
-              <td>{item.quantity}</td>
-              <td>{item.color}</td>
-              <td>{item.condition}</td>
+    <div className="p-6">
+      <div className="overflow-x-auto rounded-3xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
+        <h2 className="text-2xl font-black text-slate-950">Inventory</h2>
+        <table className="mt-4 min-w-full text-left text-sm">
+          <thead className="text-slate-500">
+            <tr>
+              <th className="p-3">Batch ID</th>
+              <th className="p-3">Fabric</th>
+              <th className="p-3">Source</th>
+              <th className="p-3">Quantity</th>
+              <th className="p-3">Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((item) => (
+              <tr key={item.id} className="border-t border-slate-100">
+                <td className="p-3 font-bold">{item.waste_batch_id}</td>
+                <td className="p-3">{item.fabric_type}</td>
+                <td className="p-3">{item.source}</td>
+                <td className="p-3">{item.quantity}</td>
+                <td className="p-3">{item.status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
