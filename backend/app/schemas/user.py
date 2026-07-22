@@ -36,6 +36,8 @@ class InventoryCreate(BaseModel):
     status: str = "Pending"
     uploaded_by: str = "Manufacturer"
     assigned_to: str = "Recycling Facility"
+    image_url: Optional[str] = None
+    analysis_results: Optional[str] = None
 
 
 class InventoryUpdate(BaseModel):
@@ -47,6 +49,8 @@ class InventoryUpdate(BaseModel):
     collection_date: Optional[str] = None
     status: Optional[str] = None
     assigned_to: Optional[str] = None
+    image_url: Optional[str] = None
+    analysis_results: Optional[str] = None
 
 
 class InventoryOut(BaseModel):
@@ -61,6 +65,8 @@ class InventoryOut(BaseModel):
     status: str
     uploaded_by: str
     assigned_to: str
+    image_url: Optional[str] = None
+    analysis_results: Optional[str] = None
 
     class Config:
         from_attributes = True

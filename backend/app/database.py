@@ -72,3 +72,9 @@ def ensure_database_schema():
                 "WHERE assigned_to IS NULL"
             )
         )
+        connection.execute(
+            text("ALTER TABLE inventory ADD COLUMN IF NOT EXISTS image_url VARCHAR")
+        )
+        connection.execute(
+            text("ALTER TABLE inventory ADD COLUMN IF NOT EXISTS analysis_results VARCHAR")
+        )

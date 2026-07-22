@@ -1,0 +1,165 @@
+﻿relative_path;id;num_colors;notes;weight_gsm;pattern;composition;cotton_pct;wool_pct;linen_pct;silk_pct;viscose_pct;modal_pct;lyocell_pct;acetate_pct;polyester_pct;polyamide_pct;elastane_pct;acrylic_pct;fleece_wool_WV;other_pct;thickness_mm;images
+dataset_root/312L_L165;312L_L165;16;100% Polyamide;;;100% Polyamide;0;0;0;0;0;0;0;0;0;100;0;0;0;;0.52;1936
+dataset_root/00547_780605;00547_780605;4;"Art: 00547
+Design: 780605
+Rapport: All Over
+WIDTH: 150
+COMPOSITION: 18% EA 82%PA
+QUALITY: 190gr/m2";190;All Over;"18% Elastane
+82% Polyacrylic";0;0;0;0;0;0;0;0;0;0;18;82;0;;0.65;484
+dataset_root/00547_880100;00547_880100;4;"Art: 00547
+Design: 880100
+Rapport: All Over
+18% Elastane
+82% PA";190;All Over;"18% Elastane
+82% Polyacrylic";0;0;0;0;0;0;0;0;0;0;18;82;0;;0.66;484
+dataset_root/00547_880206;00547_880206;3;"Art: 00547
+Design: 880206
+Rapport: All Over
+COMPOSITION: 82% Polyamide 18% Elastane Lycra
+WEIGHT: 190/m2";190;All Over;82% Polyamide 18% Elastane;0;0;0;0;0;0;0;0;0;82;18;0;0;;0.61;363
+dataset_root/5412Q_00_MUSEL;5412Q_00_MUSEL;1;100% Polyester;72;Jacquard;100% Polyester;0;0;0;0;0;0;0;0;100;0;0;0;0;;0.17;1936
+dataset_root/5612A_00_PREOLA;5612A_00_PREOLA;1;"Art. 5612A 00 PREOLA
+Jaq. Des. 0000
+Print des. 9076
+Composit 100% PL
+Season B9ES
+Col. 501 002. 50gr/m2";50;Jacquard;100% Polyester;0;0;0;0;0;0;0;0;100;0;0;0;0;;0.15;242
+dataset_root/8419_1475;8419_1475;2;"DESIGN: 8419
+ART: 1475
+WIDTH: 145
+COMPOSITION: 92% Polyamide 8% Elastane Lycra
+WEIGHT: 200gr/m2";200;Cont;92% Polyamide 8% Elastane;0;0;0;0;0;0;0;0;0;92;8;0;0;;0.58;242
+dataset_root/8421_5007;8421_5007;3;85% Polyamide 15% Elastane;175;Cont;85% Polyamide 15% Elastane;0;0;0;0;0;0;0;0;0;85;15;0;0;;0.4;363
+dataset_root/8426_1975;8426_1975;4;"DESIGN: 8426
+ART: 1975
+WIDTH: 145
+COMPOSITION: 92% Polyamide 8% Elastanee Lycra
+WEIGHT: 207/m2";207;Cont;92% Polyamide 8% Elastane;0;0;0;0;0;0;0;0;0;92;8;0;0;;0.52;484
+dataset_root/8435_1475;8435_1475;2;"DESIGN: 8435
+ART: 1475
+WIDTH: 145
+COMPOSITION: 92% Polyamide 8% Elastanee Lycra
+WEIGHT: 200gr/m2";200;;92% Polyamide 8% Elastane;0;0;0;0;0;0;0;0;0;92;8;0;0;;0.57;242
+dataset_root/8444_1975;8444_1975;4;92% Polyamide 8% Elastane;207;Cont;92% Polyamide 8% Elastane;0;0;0;0;0;0;0;0;0;92;8;0;0;;0.56;484
+dataset_root/8519;8519;3;92% Polyamide 8% Elastane;;;92% Polyamide 8% Elastane;0;0;0;0;0;0;0;0;0;92;8;0;0;;0.53;363
+dataset_root/8523_1100;8523_1100;1;100% Cotton;120;Cont;100% Cotton;100;0;0;0;0;0;0;0;0;0;0;0;0;;0.24;121
+dataset_root/8523_1475;8523_1475;3;92% Polyamide 8% Elastane;200;Cont;92% Polyamide 8% Elastane;0;0;0;0;0;0;0;0;0;92;8;0;0;;0.57;363
+dataset_root/8526_1475;8526_1475;2;92% Polyamide 8% Elastane;145;;92% Polyamide 8% Elastane;0;0;0;0;0;0;0;0;0;92;8;0;0;;0.55;
+dataset_root/8537_1475;8537_1475;2;"DESIGN: 8537
+Art: 1475
+WIDTH: 145
+COMPOSITION: %92 polyamide %8 Elastane lycra
+QUALITY: 200 gr/m2";200;Cont;92% Polyamide 8% Elastane;0;0;0;0;0;0;0;0;0;92;8;0;0;;0.58;242
+dataset_root/8539_1475;8539_1475;3;"DESIGN: 8539
+ART: 1475
+WIDTH: 145
+COMPOSITION: 92% Polyamide 8% Elastanee Lycra
+WEIGHT: 100/m2";200;Cont;92% Polyamide 8% Elastane;0;0;0;0;0;0;0;0;0;92;8;0;0;;0.55;362
+dataset_root/9274_500;9274_500;2;"DESIGN: 9274
+Art: 500
+WIDTH: 140
+COMPOSITION: %80 polyamide %20 Elastane lycra
+QUALITY: 70 gr/m2";70;Cont;80% Polyamide 20% Elastane;0;0;0;0;0;0;0;0;0;80;20;0;0;;0.3;246
+dataset_root/69705;69705;1;81% Polyester 19% Elastanee;60;;81% Polyester 19% Elastanee;0;0;0;0;0;0;0;0;81;0;19;0;0;;0.2;122
+dataset_root/70012_782102;70012_782102;2;"DESIGN: 782102
+ART: 70012
+WIDTH: 150
+COMPOSITION: 91% Polyamide 9% Elastanee Lycra
+WEIGHT: 200/m2";200;All Over;91% Polyamide 9% Elastanee;0;0;0;0;0;0;0;0;0;91;9;0;0;;0.6;242
+dataset_root/70612_672901;70612_672901;3;"DESIGN: 672901
+ART: 70612
+WIDTH: 140
+COMPOSITION: 13% Elastane 87% Polyester
+WEIGHT: 185";185;All Over;13% Elastanee 87% Polyester;0;0;0;0;0;0;0;0;87;0;13;0;0;;0.52;363
+dataset_root/aruba;aruba;1;"ARUBA PR.DANCE TWIN LA1201
+85%PES, 15%EA 70gr/m2";70;;85% Polyester 15% Elasten;0;0;0;0;0;0;0;0;85;0;15;0;0;0;0.18;121
+dataset_root/CH_6862_1315;CH_6862_1315;1;"Art: LA927
+Alt: 158/160
+Comp: 63% PL, 32% CO, 5% EA
+Dis: 9079
+Peso: 140/142";140;;63% Polyester, 32% Cotton, 5% Elastane;32;0;0;0;0;0;0;0;63;0;5;0;0;0;0.45;241
+dataset_root/CH_6862_2123;CH_6862_2123;1;"Art: LA1427
+Alt: 150/155
+Comp: 89% PES, 11% EA
+Dis: 9078
+Peso: 48/51";48;;89% Polyester, 11% Elastane;0;0;0;0;0;0;0;0;89;0;11;0;0;0;0.24;241
+dataset_root/CH_6862_110115;CH_6862_110115;1;"Art: LA1559
+Alt: 154/157
+Comp: 88% PES, 12% EA
+Dis: 9077
+Peso: 120/123";120;;88% Polyester, 12% Elastane;0;0;0;0;0;0;0;0;88;0;12;0;0;0;0.36;241
+dataset_root/D023_6390;D023_6390;3;"D023 art. 8107
+Width 155
+Rapport cont
+Weight 90 gr/m2
+Composition 69% Polyester 31% Elastane lycra";90;Cont;69% Polyester 31% Elastane ;0;0;0;0;0;0;0;0;69;0;31;0;0;0;0.26;363
+dataset_root/D023_8197;D023_8197;3;"D023 art. 8197
+Width 145
+Rapport cont
+Weight 105 gr/m2
+Composition 92% Polyester 8% Elastane lycra";105;Cont;92% Polyester 8% Elastane;0;0;0;0;0;0;0;0;92;0;8;0;0;0;0.3;363
+dataset_root/F_25799_Hauteur;F_25799_Hauteur;2;"F 25799 Hauteur
+56% Polyacrylic, 44% Polyester";;;56% Polyacrylic, 44% Polyester;0;0;0;0;0;0;0;0;44;0;0;56;0;0;;242
+dataset_root/JAUNTY_A_68791;JAUNTY_A_68791;4;"Jaunty A art. 68791 design 87841
+Width 135/140 
+65 gr/m2
+80% Polyamide 20% Elastane";65;;80% Polyamide 20% Elastane;0;0;0;0;0;0;0;0;0;80;20;0;0;0;0.26;484
+dataset_root/LUCY_PRINT_LA1301;LUCY_PRINT_LA1301;1;"LUCY PRINT LA1301
+Width 143/145
+94%PES, 6%EA 83gr/m2";83;;94% Polyester 6% Elastane lycra;0;0;0;0;0;0;0;0;94;0;6;0;0;0;0.24;121
+dataset_root/MF_4040;MF_4040;1;"MF 4040
+RB 83
+%82 NYLON %18 EA
+160 gr/m2";160;;82% Polyamide 18% Elastane;0;0;0;0;0;0;0;0;0;82;18;0;0;0;0.43;121
+dataset_root/NEMESI_PRINT_LA1298;NEMESI_PRINT_LA1298;1;"NEMESI PRINT LA1298
+Width 150 
+Weight 90gr/m2
+88%PES, 12%EA";90;;88% Polyester 12% Elastane ;0;0;0;0;0;0;0;0;88;0;12;0;0;0;0.24;121
+dataset_root/PACO_JOY_TWIN_LA1660;PACO_JOY_TWIN_LA1660;3;"PACO JOY TWIN LA1660
+93%PA, 7%EA
+Weight 83 gr/m2";83;;93% Polyamide 7% Elastane;0;0;0;0;0;0;0;0;0;0;7;93;0;0;0.34;363
+dataset_root/PACO_PLAIN_LA1302;PACO_PLAIN_LA1302;1;"PACO PLAIN LA1302
+93%PA, 7%EA
+83gr/m2";83;;93% Polyamide 7% Elastane;0;0;0;0;0;0;0;0;0;0;7;93;0;0;0.32;121
+dataset_root/PNE_4040;PNE_4040;2;"Design: PNE 4040
+Color: RB 85
+Width: 150
+Composition: Nylon 92% Elastane 8%
+Quality: 85+-5% rm/m2";85;;92% Polyamide 8% Elastane;0;0;0;0;0;0;0;0;0;92;8;0;0;0;0.29;242
+dataset_root/PSE_5070;PSE_5070;1;"Design:PSE 5070 
+Color: RB 27
+Width:150
+Composition: %92PES  %8EA
+Quality: 85gr/m2";85;;92% Polyester 8% Elastane ;0;0;0;0;0;0;0;0;92;0;8;0;0;0;0.31;121
+dataset_root/R149_1297;R149_1297;2;"Design: R149
+Article: 1297
+Width:145
+Composition: 83% Polyamide 10% Polyester 7% Elastane Lycra
+Rapport cont
+Weight: 140gr/m2";140;Cont;83% Polyamide 10% Polyester 7% Elastane Lycra;0;0;0;0;0;0;0;0;10;83;7;0;0;0;0.49;242
+dataset_root/Sharm_A;Sharm_A;4;"nome Sharm A
+articolo 63877
+design 87738
+Poliammide 86% - Elastane 14%
+200 gr/m2";200;;Polyamide 86% Elastane 14%;0;0;0;0;0;0;0;0;0;86;14;0;0;0;0.41;480
+dataset_root/T353110;T353110;6;"T353110
+Composition: 83%Cotton 17% Polyester
+Weight: 130 gr/m2";130;;83% Cotton 17% Polyester;83;0;0;0;0;0;0;0;17;0;0;0;0;0;0.43;726
+dataset_root/TULLE_99936;TULLE_99936;1;"TULLE 99936
+Design: 1249
+Composition 92% PL 8% EL
+Width: 147 cm
+Weight 54gr/m2";54;;92% Polyester 8% Elastane;0;0;0;0;0;0;0;0;92;0;8;0;0;0;0.22;120
+dataset_root/Y7201_00257;Y7201_00257;1;"Y7201 00257
+PA 92%;EA 8%
+80 gr/m2";80;;92% Polyamide 8% Elastane;0;0;0;0;0;0;0;0;0;0;8;92;0;0;0.28;120
+dataset_root/Y7201_00260;Y7201_00260;1;"Y7201 00260
+PL 100%
+75gr/m2";75;;100% Polyester;0;0;0;0;0;0;0;0;100;0;0;0;0;0;0.32;120
+dataset_root/Y7201_00263;Y7201_00263;1;"Y7201 00263
+PL 78%;EA 22%
+105gr/m2";105;;78% Polyester 22% Elastane;0;0;0;0;0;0;0;0;78;0;22;0;0;0;0.3;120
+dataset_root/Y7202_00258;Y7202_00258;1;"Y7202 00258
+PA 92%;EA 8%
+80gr/m2";80;;92% Polyacrylic 8% Elastane;0;0;0;0;0;0;0;0;0;0;8;92;0;0;0.29;120

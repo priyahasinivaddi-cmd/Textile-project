@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { getInventory, updateInventoryItem } from "../services/inventoryService";
 
 function OperatorDashboard() {
@@ -36,6 +37,23 @@ function OperatorDashboard() {
 
   return (
     <section className="space-y-6">
+
+      {/* ── AI Analysis Quick Action ── */}
+      <Link
+        to="/analyze"
+        className="group flex items-center gap-4 rounded-3xl bg-gradient-to-br from-cyan-600 to-emerald-600 p-5 text-white shadow-lg shadow-cyan-200 transition hover:-translate-y-0.5"
+      >
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-2xl">♻️</div>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-white/70">AI Pipeline</p>
+          <h3 className="text-lg font-black">Textile Waste Intelligence Platform</h3>
+          <p className="text-xs text-white/80">Analyse fabric images → get material classification &amp; recycling recommendations</p>
+        </div>
+        <svg className="ml-auto h-5 w-5 text-white/60 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </Link>
+
       <div className="grid gap-4 md:grid-cols-3">
         {[
           ["Available Waste", batches.length],

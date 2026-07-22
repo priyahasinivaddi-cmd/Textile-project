@@ -25,3 +25,6 @@ class InventoryItem(Base):
     status = Column(String, default="Pending")
     uploaded_by = Column(String, default="Manufacturer")
     assigned_to = Column(String, default="Recycling Facility")
+    image_url = Column(String, nullable=True)
+    analysis_results = Column(String, nullable=True)
+

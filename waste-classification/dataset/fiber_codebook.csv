@@ -1,0 +1,23 @@
+raw_code,normalized_fiber,interpretation_rule,confidence,comment
+PA,acrylic / polyacrylic,Dataset-specific rule: map PA to acrylic or polyacrylic.,dataset_rule,This mapping follows the normalization convention adopted for this dataset.
+NY,polyamide / nylon,Map NY to polyamide or nylon.,high,NY is treated as nylon/polyamide in this dataset.
+Nylon,polyamide / nylon,Map Nylon to polyamide or nylon.,high,Nylon is a polyamide fiber.
+EA,elastane,Map EA to elastane.,high,EA is interpreted as elastane/spandex in this dataset.
+EL,elastane,Map EL to elastane.,high,EL is interpreted as elastane/spandex in this dataset.
+Lycra,elastane,Map Lycra to elastane.,high,Lycra is a commercial name commonly used for elastane/spandex fibers.
+PES,polyester,Map PES to polyester.,high,PES is a common textile abbreviation for polyester.
+PL,polyester,Map PL to polyester.,high,PL is treated as polyester in this dataset.
+PAN,acrylic / polyacrylic,Map PAN to acrylic/polyacrylic.,high,PAN refers to polyacrylonitrile-based acrylic fiber.
+PC,review_required,Do not automatically normalize unless supplier context is available.,review_required,PC can be supplier-specific and should be checked manually.
+PE,review_required,Do not automatically normalize unless supplier context is available.,review_required,PE may refer to polyester or polyethylene depending on supplier/context.
+CO,cotton,Map CO to cotton.,high,Common textile abbreviation for cotton.
+Cotton,cotton,Map full fiber name to cotton.,high,Full normalized fiber name.
+VI,viscose,Map VI to viscose.,high,Common textile abbreviation for viscose.
+CV,viscose,Map CV to viscose.,medium,Often used for viscose/rayon depending on supplier convention.
+WO,wool,Map WO to wool.,high,Common textile abbreviation for wool.
+WV,wool,Map WV to wool or fleece wool depending on metadata column usage.,medium,Dataset contains a fleece_wool_WV field; retain source text for traceability.
+LI,linen,Map LI to linen/flax.,high,Common textile abbreviation for linen.
+SE,silk,Map SE to silk.,high,Common textile abbreviation for silk.
+AC,acetate,Map AC to acetate.,medium,Use only when supplier text confirms acetate.
+CMD,modal,Map CMD to modal when supplier context confirms it.,medium,Often used for modal/cellulosic fibers.
+CLY,lyocell,Map CLY to lyocell when supplier context confirms it.,medium,Often used for lyocell in textile labels.

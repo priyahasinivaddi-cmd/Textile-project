@@ -1,11 +1,12 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models.user import InventoryItem
 from app.schemas.user import InventoryCreate, InventoryOut, InventoryUpdate
+from app.services.pdf_report import build_waste_report
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
@@ -25,6 +26,18 @@ def generate_batch_id():
 @router.get("", response_model=list[InventoryOut])
 def list_inventory(db: Session = Depends(get_db)):
     return db.query(InventoryItem).order_by(InventoryItem.id.desc()).all()
+
+
+@router.get("/report/pdf")
+def download_waste_report(db: Session = Depends(get_db)):
+    items = db.query(InventoryItem).order_by(InventoryItem.id.desc()).all()
+    pdf = build_waste_report(items)
+    filename = f"textile-waste-report-{datetime.utcnow().strftime('%Y%m%d')}.pdf"
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.post("", response_model=InventoryOut, status_code=status.HTTP_201_CREATED)

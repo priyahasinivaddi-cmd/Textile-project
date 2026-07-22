@@ -4,6 +4,8 @@ import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import Inventory from "../pages/Inventory";
 import UploadWaste from "../pages/UploadWaste";
+import WasteAnalysis from "../pages/WasteAnalysis";
+import TextileComposition from "../pages/TextileComposition";
 import { useAuth } from "../context/AuthContext";
 
 const PrivateRoute = ({ children }) => {
@@ -44,6 +46,18 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <UploadWaste />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Public standalone analysis page — no auth required */}
+        <Route path="/analyze" element={<WasteAnalysis />} />
+
+        <Route
+          path="/composition-prediction"
+          element={
+            <PrivateRoute>
+              <TextileComposition />
             </PrivateRoute>
           }
         />

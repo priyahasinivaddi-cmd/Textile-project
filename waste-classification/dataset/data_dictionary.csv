@@ -1,0 +1,25 @@
+column_name,data_type,unit,description,allowed_values,missing_value_policy,example
+relative_path,string,,Relative path to the image folder or image file associated with the fabric sample.,,Required; should point to an existing dataset folder or image path.,dataset_root/312L_L165
+id,string,,Stable identifier of the textile fabric sample.,,Required; must be unique for each fabric sample.,312L_L165
+num_colors,integer,count,Number of visually distinguishable colors in the fabric sample.,Positive integer or empty if unknown,Use empty value if unavailable; do not use textual NaN/None markers.,16
+notes,string,,Raw supplier or curator notes preserved for traceability.,Free text,Use empty value only if no notes are available.,100% Polyamide
+weight_gsm,float,g/m2,Fabric weight in grams per square meter.,Positive numeric value,Use empty value if unavailable; numeric cells should not contain units.,190.0
+pattern,string,,Pattern or layout category of the fabric sample when available.,Examples: All Over; Cont; Jacquard,Use empty value if the pattern is unknown or not annotated.,All Over
+composition,string,,Human-readable normalized fiber composition.,Free text following normalized fiber names,Required when composition is known.,82% Polyacrylic 18% Elastane
+cotton_pct,float,%,Percentage of cotton in the fabric composition.,0-100,Use 0 when cotton is absent; use empty only if composition is unknown.,0
+wool_pct,float,%,Percentage of wool in the fabric composition.,0-100,Use 0 when wool is absent; use empty only if composition is unknown.,0
+linen_pct,float,%,Percentage of linen/flax in the fabric composition.,0-100,Use 0 when linen is absent; use empty only if composition is unknown.,0
+silk_pct,float,%,Percentage of silk in the fabric composition.,0-100,Use 0 when silk is absent; use empty only if composition is unknown.,0
+viscose_pct,float,%,Percentage of viscose in the fabric composition.,0-100,Use 0 when viscose is absent; use empty only if composition is unknown.,0
+modal_pct,float,%,Percentage of modal in the fabric composition.,0-100,Use 0 when modal is absent; use empty only if composition is unknown.,0
+lyocell_pct,float,%,Percentage of lyocell in the fabric composition.,0-100,Use 0 when lyocell is absent; use empty only if composition is unknown.,0
+acetate_pct,float,%,Percentage of acetate in the fabric composition.,0-100,Use 0 when acetate is absent; use empty only if composition is unknown.,0
+polyester_pct,float,%,Percentage of polyester in the fabric composition.,0-100,Use 0 when polyester is absent; use empty only if composition is unknown.,100
+polyamide_pct,float,%,Percentage of polyamide/nylon in the fabric composition.,0-100,Use 0 when polyamide is absent; use empty only if composition is unknown.,92
+elastane_pct,float,%,Percentage of elastane/spandex/Lycra in the fabric composition.,0-100,Use 0 when elastane is absent; use empty only if composition is unknown.,8
+acrylic_pct,float,%,Percentage of acrylic/polyacrylic in the fabric composition.,0-100,Use 0 when acrylic is absent; use empty only if composition is unknown.,82
+fleece_wool_WV,float,%,Percentage of fleece wool/WV when this category is used in the source metadata.,0-100,Use 0 when absent; review naming before final publication if possible.,0
+other_pct,float,%,Percentage of other or unspecified fibers in the fabric composition.,0-100,Use only when fiber type is known to be outside the listed normalized columns or cannot be separated.,0
+thickness_mm,float,mm,Measured fabric thickness in millimeters.,Positive numeric value,Use empty value if unavailable; numeric cells should not contain units.,0.52
+images,integer,count,Number of images associated with the fabric sample.,Non-negative integer,Use empty value if image count was not calculated.,720
+

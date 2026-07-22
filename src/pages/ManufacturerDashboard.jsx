@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   createInventoryItem,
   deleteInventoryItem,
@@ -85,6 +86,61 @@ function ManufacturerDashboard() {
 
   return (
     <section className="space-y-6">
+
+      {/* ── AI Analysis Quick Actions ── */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Link
+          to="/upload"
+          className="group flex items-center gap-4 rounded-3xl bg-gradient-to-br from-cyan-600 to-emerald-600 p-5 text-white shadow-lg shadow-cyan-200 transition hover:-translate-y-0.5 hover:shadow-cyan-300"
+        >
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-2xl">
+            🔬
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-white/70">AI Pipeline</p>
+            <h3 className="text-lg font-black">Upload &amp; Analyse Waste</h3>
+            <p className="text-xs text-white/80">Upload textile image → AI classifies material &amp; waste</p>
+          </div>
+          <svg className="ml-auto h-5 w-5 text-white/60 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+
+        <Link
+          to="/composition-prediction"
+          className="group flex items-center gap-4 rounded-3xl bg-gradient-to-br from-violet-600 to-cyan-600 p-5 text-white shadow-lg shadow-violet-200 transition hover:-translate-y-0.5"
+        >
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-2xl">
+            %
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-white/70">Trained model</p>
+            <h3 className="text-lg font-black">Predict Composition</h3>
+            <p className="text-xs text-white/80">Estimate fibre percentages from a fabric image</p>
+          </div>
+          <svg className="ml-auto h-5 w-5 text-white/60 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+
+        <Link
+          to="/analyze"
+          className="group flex items-center gap-4 rounded-3xl bg-gradient-to-br from-slate-800 to-cyan-900 p-5 text-white shadow-lg ring-1 ring-slate-700 transition hover:-translate-y-0.5"
+        >
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-2xl">
+            ♻️
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Standalone</p>
+            <h3 className="text-lg font-black">Waste Intelligence Platform</h3>
+            <p className="text-xs text-slate-400">Analyse images without saving to inventory</p>
+          </div>
+          <svg className="ml-auto h-5 w-5 text-slate-500 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-4">
         {[
           ["Uploaded Batches", batches.length],
