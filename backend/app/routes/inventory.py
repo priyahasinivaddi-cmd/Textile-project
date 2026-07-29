@@ -40,6 +40,30 @@ def download_waste_report(db: Session = Depends(get_db)):
     )
 
 
+@router.get("/{item_id}/report/pdf")
+def download_waste_item_report(item_id: int, db: Session = Depends(get_db)):
+    item = db.query(InventoryItem).filter(InventoryItem.id == item_id).first()
+
+    if not item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Waste batch not found",
+        )
+
+    pdf = build_waste_report([item])
+    safe_batch_id = "".join(
+        character
+        for character in (item.waste_batch_id or f"waste-{item.id}")
+        if character.isalnum() or character in ("-", "_")
+    )
+    filename = f"{safe_batch_id or f'waste-{item.id}'}-report.pdf"
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.post("", response_model=InventoryOut, status_code=status.HTTP_201_CREATED)
 def create_inventory_item(item: InventoryCreate, db: Session = Depends(get_db)):
     batch_id = item.waste_batch_id or generate_batch_id()

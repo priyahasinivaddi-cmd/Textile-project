@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { downloadWasteReport } from "../services/inventoryService";
+import WasteBatchDetails from "../components/WasteBatchDetails";
 import AdminDashboard from "./AdminDashboard";
 import ManagerDashboard from "./ManagerDashboard";
 import ManufacturerDashboard from "./ManufacturerDashboard";
@@ -15,8 +14,6 @@ const roleLabels = {
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
-  const [reportLoading, setReportLoading] = useState(false);
-  const [reportError, setReportError] = useState("");
 
   if (!user) return <h2 className="p-8 text-xl">Loading...</h2>;
 
@@ -26,26 +23,6 @@ const Dashboard = () => {
     manager: <ManagerDashboard />,
     manufacturer: <ManufacturerDashboard />,
     operator: <OperatorDashboard />,
-  };
-
-  const downloadReport = async () => {
-    setReportLoading(true);
-    setReportError("");
-    try {
-      const response = await downloadWasteReport();
-      const url = URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `textile-waste-report-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      setReportError(error.response?.data?.detail || "The PDF report could not be downloaded.");
-    } finally {
-      setReportLoading(false);
-    }
   };
 
   return (
@@ -66,14 +43,7 @@ const Dashboard = () => {
               </span>
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <button
-              onClick={downloadReport}
-              disabled={reportLoading}
-              className="rounded-2xl bg-gradient-to-r from-cyan-600 to-emerald-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-200 transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
-            >
-              {reportLoading ? "Preparing PDF..." : "Download Waste PDF"}
-            </button>
+          <div>
             <button
               onClick={logout}
               className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800"
@@ -83,13 +53,10 @@ const Dashboard = () => {
           </div>
         </header>
 
-        {reportError && (
-          <p className="mb-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 ring-1 ring-rose-100">
-            {reportError}
-          </p>
-        )}
-
-        {dashboards[role] || dashboards.operator}
+        <WasteBatchDetails />
+        <div className="mt-6">
+          {dashboards[role] || dashboards.operator}
+        </div>
       </div>
     </main>
   );

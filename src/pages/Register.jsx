@@ -34,7 +34,7 @@ function Register() {
         </p>
         <h1 className="mt-2 text-4xl font-black text-slate-950">Register</h1>
         <p className="mt-2 text-slate-500">
-          Choose the correct role so the system opens the right dashboard after login.
+          Choose the correct operational role so the system opens the right dashboard after login.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 grid gap-4">
@@ -45,7 +45,6 @@ function Register() {
             <option value="manufacturer">Manufacturer</option>
             <option value="operator">Recycling Facility</option>
             <option value="manager">Sustainability Officer</option>
-            <option value="admin">Admin</option>
           </select>
           {error && <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</p>}
           <button className="rounded-2xl bg-gradient-to-r from-cyan-600 to-emerald-500 px-5 py-3 font-black text-white shadow-lg shadow-cyan-200">

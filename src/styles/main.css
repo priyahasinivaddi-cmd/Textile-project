@@ -16,3 +16,17 @@ input,
 select {
   font: inherit;
 }
+
+button,
+a,
+input,
+select {
+  outline-offset: 3px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(6, 182, 212, 0.45);
+}

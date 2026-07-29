@@ -30,15 +30,36 @@ def _display(value: object) -> str:
     return escape(str(value)).replace("\n", "<br/>")
 
 
-def _analysis_text(value: str | None) -> str:
+def _label(value: object) -> str:
+    return str(value).replace("_", " ").strip().title()
+
+
+def _flatten_analysis(value: object, prefix: str = "") -> list[tuple[str, object]]:
+    if isinstance(value, dict):
+        rows: list[tuple[str, object]] = []
+        for key, nested_value in value.items():
+            nested_label = f"{prefix} - {_label(key)}" if prefix else _label(key)
+            rows.extend(_flatten_analysis(nested_value, nested_label))
+        return rows
+    if isinstance(value, list):
+        if not value:
+            return [(prefix or "Result", "None")]
+        rows = []
+        for index, nested_value in enumerate(value, start=1):
+            item_label = f"{prefix} {index}" if prefix else f"Item {index}"
+            rows.extend(_flatten_analysis(nested_value, item_label))
+        return rows
+    return [(prefix or "Result", value)]
+
+
+def _analysis_rows(value: str | None) -> list[tuple[str, object]]:
     if not value:
-        return "No analysis results saved for this batch."
+        return [("Analysis", "No analysis results saved for this batch.")]
     try:
         parsed = json.loads(value)
-        value = json.dumps(parsed, indent=2, ensure_ascii=True)
     except (TypeError, ValueError, json.JSONDecodeError):
-        pass
-    return _display(value)
+        parsed = value
+    return _flatten_analysis(parsed)
 
 
 def _draw_page(canvas, document) -> None:
@@ -54,6 +75,8 @@ def _draw_page(canvas, document) -> None:
 
 def build_waste_report(items: Iterable[object]) -> bytes:
     batches = list(items)
+    is_single_batch = len(batches) == 1
+    report_title = "Waste Batch Details" if is_single_batch else "Complete Textile Waste Report"
     output = BytesIO()
     document = SimpleDocTemplate(
         output,
@@ -62,7 +85,7 @@ def build_waste_report(items: Iterable[object]) -> bytes:
         leftMargin=18 * mm,
         topMargin=18 * mm,
         bottomMargin=20 * mm,
-        title="Complete Textile Waste Report",
+        title=report_title,
         author="Textile Circularity Platform",
     )
     styles = getSampleStyleSheet()
@@ -79,6 +102,26 @@ def build_waste_report(items: Iterable[object]) -> bytes:
     )
     styles.add(
         ParagraphStyle(
+            "ReportSubtitle",
+            parent=styles["BodyText"],
+            textColor=colors.HexColor("#475569"),
+            fontSize=9.5,
+            leading=13,
+            alignment=TA_CENTER,
+            spaceAfter=5 * mm,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            "HeaderLabel",
+            parent=styles["BodyText"],
+            textColor=colors.white,
+            fontSize=8.5,
+            leading=11,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
             "BatchTitle",
             parent=styles["Heading2"],
             textColor=colors.HexColor("#0E7490"),
@@ -90,6 +133,15 @@ def build_waste_report(items: Iterable[object]) -> bytes:
     )
     styles.add(
         ParagraphStyle(
+            "FieldValue",
+            parent=styles["BodyText"],
+            fontSize=9,
+            leading=12,
+            textColor=colors.HexColor("#0F172A"),
+        )
+    )
+    styles.add(
+        ParagraphStyle(
             "SmallText",
             parent=styles["BodyText"],
             fontSize=8.5,
@@ -97,48 +149,66 @@ def build_waste_report(items: Iterable[object]) -> bytes:
             textColor=colors.HexColor("#334155"),
         )
     )
-    styles.add(
-        ParagraphStyle(
-            "AnalysisText",
-            parent=styles["BodyText"],
-            fontName="Courier",
-            fontSize=7.5,
-            leading=10,
-            textColor=colors.HexColor("#334155"),
-        )
-    )
-
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     status_counts = Counter(getattr(batch, "status", None) or "Unspecified" for batch in batches)
     story = [
-        Paragraph("Complete Textile Waste Report", styles["ReportTitle"]),
-        Paragraph(f"Generated: {generated}", styles["SmallText"]),
-        Spacer(1, 5 * mm),
         Table(
-            [
-                [Paragraph("Total batches", styles["SmallText"]), Paragraph(str(len(batches)), styles["SmallText"])],
-                [Paragraph("Status summary", styles["SmallText"]), Paragraph(_display(", ".join(f"{key}: {value}" for key, value in sorted(status_counts.items()))), styles["SmallText"])],
-            ],
-            colWidths=[40 * mm, 125 * mm],
+            [[Paragraph("TEXTILE CIRCULARITY PLATFORM", styles["HeaderLabel"])]],
+            colWidths=[165 * mm],
             style=TableStyle(
                 [
-                    ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#ECFEFF")),
-                    ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 7),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 7),
-                    ("TOPPADDING", (0, 0), (-1, -1), 7),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#0F172A")),
+                    ("TEXTCOLOR", (0, 0), (-1, -1), colors.white),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                    ("TOPPADDING", (0, 0), (-1, -1), 8),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
                 ]
             ),
         ),
-        Spacer(1, 6 * mm),
+        Spacer(1, 7 * mm),
+        Paragraph(report_title, styles["ReportTitle"]),
     ]
+
+    if not is_single_batch:
+        story.extend(
+            [
+                Paragraph(
+                    "A clear record of the registered textile waste information shown line by line.",
+                    styles["ReportSubtitle"],
+                ),
+                Paragraph(f"Generated: {generated}", styles["ReportSubtitle"]),
+                Table(
+                    [
+                        [Paragraph("<b>Total registered batches</b>", styles["SmallText"]), Paragraph(str(len(batches)), styles["FieldValue"])],
+                        [Paragraph("<b>Status summary</b>", styles["SmallText"]), Paragraph(_display(", ".join(f"{key}: {value}" for key, value in sorted(status_counts.items()))), styles["FieldValue"])],
+                    ],
+                    colWidths=[52 * mm, 113 * mm],
+                    style=TableStyle(
+                        [
+                            ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#CFFAFE")),
+                            ("BACKGROUND", (1, 0), (1, -1), colors.HexColor("#F8FAFC")),
+                            ("BOX", (0, 0), (-1, -1), 0.7, colors.HexColor("#94A3B8")),
+                            ("INNERGRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#CBD5E1")),
+                            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                            ("TOPPADDING", (0, 0), (-1, -1), 8),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                        ]
+                    ),
+                ),
+                Spacer(1, 7 * mm),
+            ]
+        )
+    else:
+        story.append(Spacer(1, 2 * mm))
 
     if not batches:
         story.append(Paragraph("No waste batches are currently stored.", styles["BodyText"]))
 
     fields = (
+        ("Batch number", "waste_batch_id"),
         ("Database ID", "id"),
         ("Fabric type", "fabric_type"),
         ("Source", "source"),
@@ -163,27 +233,52 @@ def build_waste_report(items: Iterable[object]) -> bytes:
         story.append(
             Table(
                 rows,
-                colWidths=[40 * mm, 125 * mm],
+                colWidths=[52 * mm, 113 * mm],
                 repeatRows=0,
                 style=TableStyle(
                     [
-                        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F8FAFC")),
-                        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#E2E8F0")),
+                        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#ECFEFF")),
+                        ("BACKGROUND", (1, 0), (1, -1), colors.white),
+                        ("BOX", (0, 0), (-1, -1), 0.7, colors.HexColor("#94A3B8")),
+                        ("INNERGRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#CBD5E1")),
                         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-                        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                        ("TOPPADDING", (0, 0), (-1, -1), 5),
-                        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                        ("TOPPADDING", (0, 0), (-1, -1), 7),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
                     ]
                 ),
             )
         )
+        analysis_rows = [
+            [
+                Paragraph(f"<b>{escape(label)}</b>", styles["SmallText"]),
+                Paragraph(_display(value), styles["FieldValue"]),
+            ]
+            for label, value in _analysis_rows(getattr(batch, "analysis_results", None))
+        ]
         story.extend(
             [
-                Spacer(1, 3 * mm),
-                Paragraph("<b>Saved analysis results</b>", styles["SmallText"]),
-                Spacer(1, 1.5 * mm),
-                Paragraph(_analysis_text(getattr(batch, "analysis_results", None)), styles["AnalysisText"]),
+                Spacer(1, 5 * mm),
+                Paragraph("Saved analysis results", styles["BatchTitle"]),
+                Table(
+                    analysis_rows,
+                    colWidths=[64 * mm, 101 * mm],
+                    repeatRows=0,
+                    style=TableStyle(
+                        [
+                            ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F0FDFA")),
+                            ("BACKGROUND", (1, 0), (1, -1), colors.HexColor("#F8FAFC")),
+                            ("BOX", (0, 0), (-1, -1), 0.7, colors.HexColor("#94A3B8")),
+                            ("INNERGRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#CBD5E1")),
+                            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                            ("TOPPADDING", (0, 0), (-1, -1), 7),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+                        ]
+                    ),
+                ),
                 Spacer(1, 6 * mm),
             ]
         )
