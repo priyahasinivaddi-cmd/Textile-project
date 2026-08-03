@@ -35,3 +35,15 @@ backend/app/models/saved_models/
 output/
 waste-classification/dataset/FabricsCompositionDataset/
 *.keras
+
+# Local secrets, editor state, and database sessions
+.env
+.env.*
+!.env.example
+.vscode/
+*.session.sql
+
+# Generated model-training reports
+waste-classification/loss.png
+waste-classification/mae.png
+waste-classification/training_history.csv
