@@ -47,3 +47,22 @@ waste-classification/dataset/FabricsCompositionDataset/
 waste-classification/loss.png
 waste-classification/mae.png
 waste-classification/training_history.csv
+
+# Local datasets, third-party checkouts, uploads, and training runs
+static/uploads/
+external/
+backend/tmp/
+waste-classification/tmp/
+waste-classification/dataset/fiber/
+waste-classification/dataset_quarantine/
+waste-classification/dataset_old_*/
+waste-classification/*_report.csv
+waste-classification/fibre_*audit*.csv
+waste-classification/fibre_manual_review_queue.csv
+waste-classification/real_world_evaluation.csv
+waste-classification/training.pid
+waste-classification/training_progress.txt
+waste-classification/accuracy.png
+waste-classification/test_accuracy.png
+waste-classification/test_loss.png
+waste-classification/test_training_history.csv

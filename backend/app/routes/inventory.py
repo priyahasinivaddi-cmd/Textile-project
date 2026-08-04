@@ -7,6 +7,7 @@ from app.database import SessionLocal
 from app.models.user import InventoryItem
 from app.schemas.user import InventoryCreate, InventoryOut, InventoryUpdate
 from app.services.pdf_report import build_waste_report
+from app.services.sustainability_common import parse_quantity_kg
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
@@ -80,6 +81,10 @@ def create_inventory_item(item: InventoryCreate, db: Session = Depends(get_db)):
         )
 
     item_data = item.model_dump()
+    try:
+        item_data["quantity_kg"] = parse_quantity_kg(item.quantity)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     item_data["waste_batch_id"] = batch_id
     new_item = InventoryItem(**item_data)
     db.add(new_item)
@@ -105,6 +110,11 @@ def update_inventory_item(
 
     for key, value in item.model_dump(exclude_unset=True).items():
         setattr(db_item, key, value)
+    if item.quantity is not None:
+        try:
+            db_item.quantity_kg = parse_quantity_kg(item.quantity)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     db.commit()
     db.refresh(db_item)

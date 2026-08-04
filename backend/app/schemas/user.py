@@ -8,6 +8,7 @@ class UserCreate(BaseModel):
     email: str
     password: str
     role: str = "operator"
+    organization_id: Optional[int] = None
 
 
 class UserLogin(BaseModel):
@@ -20,6 +21,7 @@ class UserOut(BaseModel):
     name: str
     email: str
     role: str = "operator"
+    organization_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -59,6 +61,7 @@ class InventoryOut(BaseModel):
     fabric_type: str
     source: str
     quantity: str
+    quantity_kg: Optional[float] = None
     color: str
     condition: str
     collection_date: str

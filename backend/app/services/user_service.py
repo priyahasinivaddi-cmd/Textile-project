@@ -13,7 +13,7 @@ def login_user(db: Session, email: str, password: str):
     return create_access_token({"sub": user.email})
 
 
-def create_user(db, name, email, password, role="operator"):
+def create_user(db, name, email, password, role="operator", organization_id=None):
     existing_user = db.query(User).filter(User.email == email).first()
 
     if existing_user:
@@ -24,6 +24,7 @@ def create_user(db, name, email, password, role="operator"):
         email=email,
         password=hash_password(password),
         role=role,
+        organization_id=organization_id,
     )
 
     db.add(new_user)

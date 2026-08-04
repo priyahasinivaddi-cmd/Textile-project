@@ -18,6 +18,14 @@ SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 def ensure_database_schema():
     with engine.begin() as connection:
         connection.execute(
@@ -78,3 +86,14 @@ def ensure_database_schema():
         connection.execute(
             text("ALTER TABLE inventory ADD COLUMN IF NOT EXISTS analysis_results VARCHAR")
         )
+        connection.execute(
+            text("ALTER TABLE inventory ADD COLUMN IF NOT EXISTS owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL")
+        )
+        connection.execute(
+            text("CREATE INDEX IF NOT EXISTS ix_inventory_owner_id ON inventory (owner_id)")
+        )
+        connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) ON DELETE SET NULL"))
+        connection.execute(text("CREATE INDEX IF NOT EXISTS ix_users_organization_id ON users (organization_id)"))
+        connection.execute(text("ALTER TABLE inventory ADD COLUMN IF NOT EXISTS quantity_kg DOUBLE PRECISION"))
+        connection.execute(text("ALTER TABLE waste_assessments ADD COLUMN IF NOT EXISTS audit_log TEXT DEFAULT '[]'"))
+        connection.execute(text("UPDATE waste_assessments SET audit_log = '[]' WHERE audit_log IS NULL"))

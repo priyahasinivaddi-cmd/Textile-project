@@ -1,3 +1,7 @@
+# Use Python 3.10-3.12; TensorFlow does not support the project's broken Python 3.14 venv.
 tensorflow>=2.16,<2.22
 pandas>=2.0,<3.0
 matplotlib>=3.7,<4.0
+numpy>=1.26,<3.0
+Pillow>=10.0,<13.0
+scikit-learn>=1.4,<2.0

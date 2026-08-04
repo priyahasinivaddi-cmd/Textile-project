@@ -1,151 +1,184 @@
-"""Lifecycle-managed loader for the textile composition Keras model."""
+"""Load the production fabric model once and provide safe predictions."""
 
 from __future__ import annotations
 
 import json
 import logging
+import csv
 from io import BytesIO
 from pathlib import Path
 from threading import Lock
 from typing import Any
 
 import numpy as np
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 
 logger = logging.getLogger(__name__)
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-MODEL_PATH = PROJECT_ROOT / "waste-classification" / "fabric_composition_model.keras"
-TARGET_COLUMNS_PATH = PROJECT_ROOT / "waste-classification" / "target_columns.json"
-EXPECTED_INPUT_SIZE = (224, 224)
+ARTIFACT_DIR = PROJECT_ROOT / "waste-classification"
+MODEL_PATH = ARTIFACT_DIR / "best_fabric_model.keras"
+CLASS_NAMES_PATH = ARTIFACT_DIR / "class_names.json"
+EXPECTED_INPUT_SIZE = (160, 160)
+CONFIDENCE_THRESHOLD = 70.0
+
+
+def display_name(name: str) -> str:
+    aliases = {"polyamide": "Nylon", "viscose": "Rayon", "other": "Other fibres"}
+    return aliases.get(name.lower(), name.replace("_", " ").title())
 
 
 class ModelService:
-    """Owns the single model instance used for the lifetime of the API process."""
+    """Own the single model instance used for the lifetime of the API process."""
 
     def __init__(self) -> None:
-        # TensorFlow is imported lazily in load(). This keeps unrelated API
-        # routes (including authentication) available if the ML runtime or
-        # model artifact cannot be loaded.
         self.model: Any | None = None
-        self.target_columns: list[str] | None = None
+        self.class_names: list[str] | None = None
         self.load_error: str | None = None
         self._load_attempted = False
         self._lock = Lock()
         self._prediction_lock = Lock()
 
+    # Compatibility for code that checks the previous attribute name.
+    @property
+    def target_columns(self) -> list[str] | None:
+        return self.class_names
+
+    @target_columns.setter
+    def target_columns(self, value: list[str] | None) -> None:
+        self.class_names = [item.removesuffix("_pct") for item in value] if value else value
+
     def load(self) -> None:
-        """Load artifacts once; retain a safe error message if loading fails."""
         with self._lock:
+            if self.model is not None and self.class_names is not None:
+                self._load_attempted = True
+                return
             if self._load_attempted:
                 return
             self._load_attempted = True
-
             try:
                 import tensorflow as tf
 
                 if not MODEL_PATH.is_file():
-                    raise FileNotFoundError(f"Model file is missing: {MODEL_PATH}")
-                if not TARGET_COLUMNS_PATH.is_file():
-                    raise FileNotFoundError(
-                        f"Target columns file is missing: {TARGET_COLUMNS_PATH}"
-                    )
-
-                with TARGET_COLUMNS_PATH.open(encoding="utf-8") as target_file:
-                    labels = json.load(target_file)
-                if not isinstance(labels, list) or not labels or not all(
-                    isinstance(label, str) for label in labels
-                ):
-                    raise ValueError("target_columns.json must contain a non-empty list of strings")
-
-                self.target_columns = labels
-                self.model = tf.keras.models.load_model(MODEL_PATH, compile=False)
-                logger.info(
-                    "Textile composition model loaded with %d target labels",
-                    len(labels),
-                )
+                    raise FileNotFoundError(f"Production model is missing: {MODEL_PATH}")
+                if not CLASS_NAMES_PATH.is_file():
+                    raise FileNotFoundError(f"Class mapping is missing: {CLASS_NAMES_PATH}")
+                labels = json.loads(CLASS_NAMES_PATH.read_text(encoding="utf-8"))
+                if not isinstance(labels, list) or not labels or not all(isinstance(item, str) and item for item in labels):
+                    raise ValueError("class_names.json must contain a non-empty list of class names")
+                loaded = tf.keras.models.load_model(MODEL_PATH, compile=False)
+                output_count = int(loaded.output_shape[-1])
+                input_size = tuple(int(value) for value in loaded.input_shape[1:3])
+                if output_count != len(labels):
+                    raise ValueError(f"Model has {output_count} outputs but class_names.json has {len(labels)} labels")
+                if input_size != EXPECTED_INPUT_SIZE:
+                    raise ValueError(f"Model input size {input_size} does not match production size {EXPECTED_INPUT_SIZE}")
+                self.class_names, self.model = labels, loaded
+                logger.info("Loaded production fabric model with %d classes", len(labels))
             except Exception as exc:
                 self.model = None
+                self.class_names = None
                 self.load_error = str(exc)
-                logger.exception("Unable to load the textile composition model")
+                logger.exception("Unable to load the production fabric model")
 
     def preprocess_image(self, image_bytes: bytes) -> np.ndarray:
-        """Decode an image and apply the same preprocessing used for training."""
         try:
             with Image.open(BytesIO(image_bytes)) as image:
-                image = image.convert("RGB")
+                image.verify()
+            with Image.open(BytesIO(image_bytes)) as image:
+                image = ImageOps.exif_transpose(image).convert("RGB")
+                logger.info("Decoded uploaded image dimensions: %dx%d", image.width, image.height)
                 image = image.resize(EXPECTED_INPUT_SIZE, Image.Resampling.BILINEAR)
-                image_array = np.asarray(image, dtype=np.float32)
-        except (UnidentifiedImageError, OSError, ValueError) as exc:
-            raise ValueError("The uploaded file is not a valid PNG or JPEG image") from exc
-
-        # Equivalent to tf.keras.applications.mobilenet_v2.preprocess_input:
-        # convert RGB values from [0, 255] to [-1, 1].
-        image_array = (image_array / 127.5) - 1.0
-        return np.expand_dims(image_array, axis=0)
+                pixels = np.asarray(image, dtype=np.float32)
+        except (UnidentifiedImageError, OSError, ValueError, SyntaxError) as exc:
+            raise ValueError("The uploaded file is not a valid supported image") from exc
+        # The production model embeds MobileNetV2 preprocessing and expects
+        # ordinary RGB values in the [0, 255] range.
+        return np.expand_dims(pixels, axis=0)
 
     def predict(self, image_bytes: bytes) -> dict[str, Any]:
-        if self.model is None or self.target_columns is None:
-            raise RuntimeError(self.load_error or "The composition model is unavailable")
-
-        batch = self.preprocess_image(image_bytes)
+        self.load()
+        if self.model is None or self.class_names is None:
+            raise RuntimeError(self.load_error or "The fabric model is unavailable")
         try:
             with self._prediction_lock:
-                raw_prediction = self.model.predict(batch, verbose=0)
-            values = np.asarray(raw_prediction, dtype=np.float64).reshape(-1)
+                raw = self.model.predict(self.preprocess_image(image_bytes), verbose=0)
+            probabilities = np.asarray(raw, dtype=np.float64).reshape(-1)
+        except ValueError:
+            raise
         except Exception as exc:
-            logger.exception("Textile composition prediction failed")
+            logger.exception("Fabric prediction failed")
             raise RuntimeError("The model could not generate a prediction") from exc
-
-        if values.size != len(self.target_columns) or not np.all(np.isfinite(values)):
-            raise RuntimeError("The model returned an invalid prediction shape or values")
-
-        values = np.maximum(values, 0.0)
-        raw_total = float(values.sum())
-        if raw_total <= 0:
-            raise RuntimeError("The model did not predict any positive composition values")
-        values = values * (100.0 / raw_total)
-
-        composition = {
-            label.removesuffix("_pct"): round(float(value), 2)
-            for label, value in zip(self.target_columns, values)
-        }
-        # Correct the small rounding drift so the displayed values total 100.00.
-        rounded_total = round(sum(composition.values()), 2)
-        dominant_fibre = max(composition, key=composition.get)
-        composition[dominant_fibre] = round(
-            composition[dominant_fibre] + (100.0 - rounded_total), 2
+        if probabilities.size != len(self.class_names) or not np.all(np.isfinite(probabilities)):
+            raise RuntimeError("The model returned an invalid prediction")
+        # Compatibility with a mock or a legacy normalized-positive output; the
+        # production softmax model already sums to one.
+        probabilities = np.maximum(probabilities, 0.0)
+        total = float(probabilities.sum())
+        if total <= 0:
+            raise RuntimeError("The model returned no positive probabilities")
+        probabilities /= total
+        order = np.argsort(probabilities)[::-1][: min(3, len(probabilities))]
+        top = [
+            {"fabric": display_name(self.class_names[index]), "confidence": round(float(probabilities[index] * 100), 2)}
+            for index in order
+        ]
+        confidence = top[0]["confidence"]
+        low_confidence = confidence < CONFIDENCE_THRESHOLD
+        logger.info(
+            "Fabric prediction: model_input_shape=%s class_index=%d class_name=%s "
+            "confidence=%.2f low_confidence=%s",
+            tuple(getattr(self.model, "input_shape", (None, *EXPECTED_INPUT_SIZE, 3))),
+            int(order[0]),
+            top[0]["fabric"],
+            confidence,
+            low_confidence,
         )
-
-        return {
-            "dominant_fibre": dominant_fibre,
-            "predicted_composition": composition,
-            "total_percentage": round(sum(composition.values()), 2),
+        result: dict[str, Any] = {
+            "predicted_fabric": "Uncertain" if low_confidence else top[0]["fabric"],
+            "confidence": confidence,
+            "top_predictions": top,
+            "low_confidence": low_confidence,
         }
+        if low_confidence:
+            result["message"] = "The image could not be classified confidently. Upload a clearer fabric image."
+        return result
 
     def status(self) -> dict[str, Any]:
-        model_output_count: int | None = None
-        if self.model is not None:
-            output_shape = self.model.output_shape
-            if isinstance(output_shape, tuple) and output_shape:
-                model_output_count = int(output_shape[-1])
-
-        target_count = len(self.target_columns) if self.target_columns is not None else None
+        self.load()
+        output_count = int(self.model.output_shape[-1]) if self.model is not None else None
+        label_count = len(self.class_names) if self.class_names is not None else None
+        training_metrics: dict[str, float | int] = {}
+        history_path = ARTIFACT_DIR / "training_history.csv"
+        try:
+            with history_path.open(encoding="utf-8", newline="") as handle:
+                rows = list(csv.DictReader(handle))
+            if rows:
+                last = rows[-1]
+                training_metrics = {
+                    "epochs_completed": len(rows),
+                    "training_accuracy_percent": round(float(last["accuracy"]) * 100, 2),
+                    "validation_accuracy_percent": round(float(last["val_accuracy"]) * 100, 2),
+                    "validation_loss": round(float(last["val_loss"]), 4),
+                }
+        except (OSError, KeyError, TypeError, ValueError):
+            logger.warning("Training history metadata could not be read", exc_info=True)
         return {
             "model_loaded": self.model is not None,
-            "target_labels_loaded": self.target_columns is not None,
-            "expected_input_size": {
-                "width": EXPECTED_INPUT_SIZE[0],
-                "height": EXPECTED_INPUT_SIZE[1],
-            },
-            "model_output_count": model_output_count,
-            "target_label_count": target_count,
-            "outputs_match_target_labels": (
-                model_output_count == target_count
-                if model_output_count is not None and target_count is not None
-                else False
-            ),
+            "class_names_loaded": self.class_names is not None,
+            "target_labels_loaded": self.class_names is not None,
+            "expected_input_size": {"width": EXPECTED_INPUT_SIZE[0], "height": EXPECTED_INPUT_SIZE[1]},
+            "model_output_count": output_count,
+            "class_name_count": label_count,
+            "target_label_count": label_count,
+            "outputs_match_class_names": output_count == label_count if output_count is not None and label_count is not None else False,
+            "outputs_match_target_labels": output_count == label_count if output_count is not None and label_count is not None else False,
+            "confidence_threshold_percent": CONFIDENCE_THRESHOLD,
+            "model_artifact": MODEL_PATH.name,
+            "model_size_mb": round(MODEL_PATH.stat().st_size / (1024 * 1024), 2) if MODEL_PATH.is_file() else None,
+            "model_updated_at": MODEL_PATH.stat().st_mtime if MODEL_PATH.is_file() else None,
+            "classes": [display_name(name) for name in self.class_names] if self.class_names else [],
+            "training_metrics": training_metrics,
             "error": self.load_error,
         }
 

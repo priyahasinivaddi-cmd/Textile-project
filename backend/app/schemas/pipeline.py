@@ -8,7 +8,7 @@ These models:
   2. Validate the JSON structure returned by /pipeline/analyze.
   3. Make it easy to add new fields without breaking existing consumers.
 """
-from typing import List, Optional
+from typing import Any, List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -63,6 +63,12 @@ class MaterialResult(BaseModel):
     )
     quality: str = Field(
         ..., description="Overall material quality grade: 'high', 'medium', or 'low'."
+    )
+    evidence_source: str = Field(
+        "image_model", description="Source of the material result: care_label or image_model."
+    )
+    alternatives: List[dict[str, Any]] = Field(
+        default_factory=list, description="Ranked image-model candidates for user confirmation."
     )
 
 

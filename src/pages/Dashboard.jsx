@@ -1,5 +1,10 @@
+import { useCallback, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import WasteBatchDetails from "../components/WasteBatchDetails";
+import SustainabilityIntelligence from "../components/SustainabilityIntelligence";
+import BrandLogo from "../components/BrandLogo";
+import LoginIntro from "../components/LoginIntro";
 import AdminDashboard from "./AdminDashboard";
 import ManagerDashboard from "./ManagerDashboard";
 import ManufacturerDashboard from "./ManufacturerDashboard";
@@ -14,6 +19,11 @@ const roleLabels = {
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
+  const [showIntro, setShowIntro] = useState(() => sessionStorage.getItem("showLoginIntro") === "true");
+  const finishIntro = useCallback(() => {
+    sessionStorage.removeItem("showLoginIntro");
+    setShowIntro(false);
+  }, []);
 
   if (!user) return <h2 className="p-8 text-xl">Loading...</h2>;
 
@@ -24,12 +34,21 @@ const Dashboard = () => {
     manufacturer: <ManufacturerDashboard />,
     operator: <OperatorDashboard />,
   };
+  const roleNavigation = {
+    admin: [["Overview", "#role-dashboard"], ["All Waste Details", "#waste-details"], ["Sustainability", "#sustainability-intelligence"]],
+    manager: [["Sustainability", "#sustainability-intelligence"], ["Waste Overview", "#role-dashboard"], ["Circularity Decisions", "#circularity-decisions"]],
+    manufacturer: [["Overview", "#role-dashboard"], ["Register Waste", "/upload"], ["Inventory", "/inventory"], ["Image Analysis", "/analyze"]],
+    operator: [["Overview", "#role-dashboard"], ["Inventory", "/inventory"], ["Image Analysis", "/analyze"]],
+  };
 
   return (
-    <main className="min-h-screen px-4 py-6 sm:px-6 lg:px-8">
+    <main className="dashboard-shell min-h-screen px-4 py-6 sm:px-6 lg:px-8">
+      {showIntro && <LoginIntro name={user?.name} onComplete={finishIntro} />}
       <div className="mx-auto max-w-7xl">
-        <header className="mb-6 flex flex-col gap-4 rounded-3xl bg-white/85 p-5 shadow-xl shadow-slate-200/70 ring-1 ring-slate-200 backdrop-blur md:flex-row md:items-center md:justify-between">
-          <div>
+        <header className="dashboard-header mb-6 flex flex-col gap-4 rounded-3xl p-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            <BrandLogo compact />
+            <div>
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-600">
               Textile circularity platform
             </p>
@@ -42,6 +61,7 @@ const Dashboard = () => {
                 {roleLabels[role] || roleLabels.operator}
               </span>
             </p>
+            </div>
           </div>
           <div>
             <button
@@ -53,10 +73,20 @@ const Dashboard = () => {
           </div>
         </header>
 
-        <WasteBatchDetails />
-        <div className="mt-6">
+        <nav aria-label="Dashboard navigation" className="mb-6 flex flex-wrap gap-2 rounded-2xl bg-white p-3 shadow-md ring-1 ring-slate-200">
+          {(roleNavigation[role] || roleNavigation.operator).map(([label, destination]) => destination.startsWith("#") ? (
+            <a key={label} href={destination} className="rounded-xl px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-cyan-50 hover:text-cyan-800">{label}</a>
+          ) : (
+            <Link key={label} to={destination} className="rounded-xl px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-cyan-50 hover:text-cyan-800">{label}</Link>
+          ))}
+        </nav>
+
+        {role === "admin" && <div id="waste-details"><WasteBatchDetails /></div>}
+        {role === "manager" && <div id="sustainability-intelligence"><SustainabilityIntelligence role={role} /></div>}
+        <div id="role-dashboard" className={role === "admin" || role === "manager" ? "mt-6" : ""}>
           {dashboards[role] || dashboards.operator}
         </div>
+        {role === "admin" && <div id="sustainability-intelligence"><SustainabilityIntelligence role={role} /></div>}
       </div>
     </main>
   );

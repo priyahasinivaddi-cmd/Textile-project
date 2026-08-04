@@ -62,6 +62,32 @@ def _analysis_rows(value: str | None) -> list[tuple[str, object]]:
     return _flatten_analysis(parsed)
 
 
+def _sustainability_rows(batch: object) -> list[tuple[str, object]]:
+    assessment = getattr(batch, "assessment", None)
+    if assessment is None:
+        return [("Sustainability assessment", "Not calculated for this batch.")]
+    fields = (
+        ("Assessed quantity", "quantity_kg", " kg"),
+        ("CO2 saved", "co2_saved_kg", " kg CO2e"),
+        ("Water saved", "water_saved_litres", " litres"),
+        ("Landfill reduction", "landfill_reduction_kg", " kg"),
+        ("Recoverable material", "recoverable_material_kg", " kg"),
+        ("Recyclability score", "recyclability_score", "/100"),
+        ("Reuse score", "reuse_score", "/100"),
+        ("Sustainability score", "sustainability_score", "/100"),
+        ("Material recovery score", "material_recovery_score", "/100"),
+        ("Circularity score", "circularity_score", "/100"),
+        ("Circularity category", "circularity_category", ""),
+        ("Recommended action", "recommended_action", ""),
+        ("Processing method", "recommended_processing_method", ""),
+    )
+    rows = []
+    for label, attribute, suffix in fields:
+        value = getattr(assessment, attribute, None)
+        rows.append((label, f"{value}{suffix}" if value not in (None, "") else "Not available"))
+    return rows
+
+
 def _draw_page(canvas, document) -> None:
     canvas.saveState()
     canvas.setStrokeColor(colors.HexColor("#CBD5E1"))
@@ -268,6 +294,33 @@ def build_waste_report(items: Iterable[object]) -> bytes:
                     style=TableStyle(
                         [
                             ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F0FDFA")),
+                            ("BACKGROUND", (1, 0), (1, -1), colors.HexColor("#F8FAFC")),
+                            ("BOX", (0, 0), (-1, -1), 0.7, colors.HexColor("#94A3B8")),
+                            ("INNERGRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#CBD5E1")),
+                            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                            ("TOPPADDING", (0, 0), (-1, -1), 7),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+                        ]
+                    ),
+                ),
+                Spacer(1, 6 * mm),
+            ]
+        )
+        sustainability_rows = [
+            [Paragraph(f"<b>{escape(label)}</b>", styles["SmallText"]), Paragraph(_display(value), styles["FieldValue"])]
+            for label, value in _sustainability_rows(batch)
+        ]
+        story.extend(
+            [
+                Paragraph("Sustainability intelligence", styles["BatchTitle"]),
+                Table(
+                    sustainability_rows,
+                    colWidths=[64 * mm, 101 * mm],
+                    style=TableStyle(
+                        [
+                            ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#ECFDF5")),
                             ("BACKGROUND", (1, 0), (1, -1), colors.HexColor("#F8FAFC")),
                             ("BOX", (0, 0), (-1, -1), 0.7, colors.HexColor("#94A3B8")),
                             ("INNERGRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#CBD5E1")),

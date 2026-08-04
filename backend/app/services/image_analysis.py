@@ -18,12 +18,18 @@ stage can be independently tested or replaced with an ML model.
 """
 import math
 import os
+import logging
 from PIL import Image
 
 from app.utils.image_utils import rgb_to_hex, get_color_name, get_dominant_color
 from app.services.material_classifier import classify_material
 from app.services.waste_classifier import classify_waste
 from app.services.recommendation_engine import generate_recommendations
+from app.services.model_service import model_service
+from app.services.label_composition import parse_label_composition
+
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +136,7 @@ def _extract_features(image_path: str, sensitivity: float) -> dict:
 # Public pipeline entry point
 # ---------------------------------------------------------------------------
 
-def analyze_image_file(image_path: str, sensitivity: float = 0.5) -> dict:
+def analyze_image_file(image_path: str, sensitivity: float = 0.5, label_text: str | None = None) -> dict:
     """
     Run the full textile analysis pipeline on a saved image file.
 
@@ -149,8 +155,26 @@ def analyze_image_file(image_path: str, sensitivity: float = 0.5) -> dict:
     # Stage 1 — Feature extraction
     features = _extract_features(image_path, sensitivity)
 
-    # Stage 2 — Material classification
-    material = classify_material(features)
+    # Stage 2 — Material classification. Prefer the image-trained composition
+    # model; retain the older colour/texture classifier as a safe fallback.
+    composition_prediction = None
+    try:
+        with open(image_path, "rb") as image_file:
+            # predict() loads the production model on first use. Checking the
+            # model attributes before this call caused normal uploads to skip
+            # the trained model entirely on a fresh backend start.
+            composition_prediction = model_service.predict(image_file.read())
+    except (OSError, RuntimeError, ValueError):
+        logger.exception("Composition model failed; using legacy material classifier")
+    material = classify_material(features, composition_prediction)
+    material["alternatives"] = (composition_prediction or {}).get("top_predictions", [])
+    label_material = parse_label_composition(label_text)
+    if label_material is not None:
+        label_material["quality"] = material["quality"]
+        label_material["alternatives"] = []
+        material = label_material
+    else:
+        material["evidence_source"] = "image_model"
 
     # Stage 3 — Waste classification
     waste = classify_waste(material, features)

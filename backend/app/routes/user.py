@@ -22,7 +22,7 @@ def get_db():
 
 @router.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
-    new_user = create_user(db, user.name, user.email, user.password, user.role)
+    new_user = create_user(db, user.name, user.email, user.password, user.role, user.organization_id)
 
     if not new_user:
         raise HTTPException(
@@ -65,7 +65,7 @@ def login(
             detail="Invalid email or password",
         )
 
-    token = create_access_token({"sub": db_user.email})
+    token = create_access_token({"sub": db_user.email, "uid": db_user.id, "role": db_user.role, "organization_id": db_user.organization_id})
 
     return {
         "access_token": token,

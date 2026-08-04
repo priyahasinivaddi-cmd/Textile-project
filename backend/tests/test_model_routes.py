@@ -52,8 +52,10 @@ def test_valid_image_prediction(monkeypatch):
     assert response.status_code == 200
     body = response.json()
     assert body["success"] is True
-    assert body["dominant_fibre"] == "cotton"
-    assert body["total_percentage"] == 100.0
+    assert body["predicted_fabric"] == "Cotton"
+    assert body["confidence"] == 80.0
+    assert body["top_predictions"][0] == {"fabric": "Cotton", "confidence": 80.0}
+    assert body["low_confidence"] is False
 
 
 def test_unsupported_file_type(monkeypatch):

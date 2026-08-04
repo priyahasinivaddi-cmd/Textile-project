@@ -1,4 +1,4 @@
-"""HTTP endpoints for the textile composition model."""
+"""HTTP endpoints for the production fabric model."""
 
 import logging
 
@@ -21,6 +21,7 @@ def model_status() -> dict:
 
 @router.post("/predict-composition")
 async def predict_composition(file: UploadFile = File(...)) -> dict:
+    logger.info("Fabric prediction upload received: filename=%s", file.filename or "unnamed")
     if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -43,7 +44,10 @@ async def predict_composition(file: UploadFile = File(...)) -> dict:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
         logger.error("Composition prediction request failed: %s", exc)
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=503,
+            detail="Fabric prediction is temporarily unavailable",
+        ) from exc
 
     return {
         "success": True,

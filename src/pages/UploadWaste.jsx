@@ -9,6 +9,7 @@ function UploadWaste() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [sensitivity, setSensitivity] = useState(50); // slider range 0-100 mapped to 0.0-1.0
+  const [labelText, setLabelText] = useState("");
   
   // Pipeline status states
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -24,6 +25,7 @@ function UploadWaste() {
   // Results state
   const [analysisResult, setAnalysisResult] = useState(null);
   const [activeTab, setActiveTab] = useState("features");
+  const [confirmingCandidate, setConfirmingCandidate] = useState("");
 
   // Inventory Save Form state
   const [registerForm, setRegisterForm] = useState({
@@ -74,6 +76,7 @@ function UploadWaste() {
     setPreviewUrl(null);
     setAnalysisResult(null);
     setSaveSuccess(false);
+    setLabelText("");
   };
 
   // Run the analysis pipeline
@@ -111,7 +114,7 @@ function UploadWaste() {
       // Step 2: Feature Extraction
       updateStep(1, "loading");
       const sensValue = sensitivity / 100.0;
-      const response = await analyzeImage(file, sensValue);
+      const response = await analyzeImage(file, sensValue, labelText);
       const data = response.data;
       await new Promise(resolve => setTimeout(resolve, 1000));
       updateStep(1, "success");
@@ -141,6 +144,21 @@ function UploadWaste() {
       setSaveError(err.response?.data?.detail || "AI analysis pipeline failed. Please try again.");
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const confirmMaterialCandidate = async (fabric) => {
+    if (!file || confirmingCandidate) return;
+    setConfirmingCandidate(fabric);
+    setSaveError("");
+    try {
+      const response = await analyzeImage(file, sensitivity / 100.0, `100% ${fabric}`);
+      setAnalysisResult(response.data);
+      setLabelText(`100% ${fabric}`);
+    } catch (err) {
+      setSaveError(err.response?.data?.detail || "Could not confirm this material.");
+    } finally {
+      setConfirmingCandidate("");
     }
   };
 
@@ -184,7 +202,12 @@ function UploadWaste() {
       });
     } catch (err) {
       console.error(err);
-      setSaveError("Failed to save inventory record. Please verify fields and try again.");
+      const detail = err.response?.data?.detail;
+      setSaveError(
+        typeof detail === "string"
+          ? detail
+          : "Failed to save inventory record. Please verify fields and try again."
+      );
     } finally {
       setIsSaving(false);
     }
@@ -303,6 +326,24 @@ function UploadWaste() {
                 <p className="mt-1.5 text-xs text-slate-500">
                   Higher sensitivity flags micro-tears (damage) and light stains (contamination) more aggressively.
                 </p>
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+                <label htmlFor="label-composition" className="block text-sm font-black text-slate-800">
+                  Care-label composition <span className="font-medium text-slate-500">(recommended)</span>
+                </label>
+                <p className="mt-1 text-xs text-slate-600">
+                  Enter the printed label for a more reliable result. Leave blank for image-only estimation.
+                </p>
+                <textarea
+                  id="label-composition"
+                  value={labelText}
+                  onChange={(event) => setLabelText(event.target.value)}
+                  disabled={isAnalyzing}
+                  rows={2}
+                  placeholder="Example: 80% Cotton, 20% Polyester"
+                  className="mt-3 w-full resize-none rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                />
               </div>
 
               {/* Action Button */}
@@ -538,14 +579,44 @@ function UploadWaste() {
                             <p className="text-2xl font-black text-slate-900">{analysisResult.material.fabric_type}</p>
                           </div>
                           <div className="text-right">
-                            <span className="text-xs font-bold text-slate-500">Engine Confidence</span>
+                            <span className="text-xs font-bold text-slate-500">
+                              {analysisResult.material.evidence_source === "care_label" ? "Label confidence" : "Image confidence"}
+                            </span>
                             <p className="text-xl font-black text-cyan-600">{(analysisResult.material.confidence * 100).toFixed(0)}%</p>
                           </div>
                         </div>
 
+                        <div className={`rounded-xl border px-3 py-2 text-xs font-bold ${analysisResult.material.evidence_source === "care_label" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+                          {analysisResult.material.evidence_source === "care_label"
+                            ? "Verified from the care-label composition you entered."
+                            : "Estimated from the textile image. Verify with a care label when possible."}
+                        </div>
+
+                        {analysisResult.material.evidence_source === "image_model" && analysisResult.material.alternatives?.length > 0 && (
+                          <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-3">
+                            <p className="text-xs font-black text-slate-800">Confirm the closest material</p>
+                            <p className="mt-1 text-xs text-slate-600">Your confirmation improves the saved result and recalculates recycling guidance.</p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {analysisResult.material.alternatives
+                                .filter((item) => /cotton|polyester|wool|silk|linen|flax|nylon|rayon|viscose|acrylic|denim/i.test(item.fabric))
+                                .map((item) => (
+                                  <button
+                                    key={item.fabric}
+                                    type="button"
+                                    disabled={Boolean(confirmingCandidate)}
+                                    onClick={() => confirmMaterialCandidate(item.fabric)}
+                                    className="rounded-lg border border-cyan-200 bg-white px-3 py-2 text-xs font-bold text-cyan-800 transition hover:border-cyan-500 disabled:opacity-50"
+                                  >
+                                    {confirmingCandidate === item.fabric ? "Confirming…" : `${item.fabric} (${item.confidence.toFixed(0)}%)`}
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Composition bar */}
                         <div className="border-t border-slate-200/60 pt-4">
-                          <span className="text-xs font-bold text-slate-500">Fiber Composition assumption</span>
+                          <span className="text-xs font-bold text-slate-500">Fibre composition</span>
                           <div className="flex justify-between items-center mt-1">
                             <span className="font-bold text-sm text-slate-800">{analysisResult.material.fiber_composition}</span>
                             <span className="text-xs capitalize font-semibold bg-slate-200/50 px-2 py-0.5 rounded">{analysisResult.material.blend_type} blend</span>
@@ -665,12 +736,14 @@ function UploadWaste() {
                       />
                     </div>
                     <div>
-                      <label htmlFor="quantity" className="block text-xs font-bold text-slate-700 mb-1">Quantity (with Unit)*</label>
+                      <label htmlFor="quantity" className="block text-xs font-bold text-slate-700 mb-1">Quantity (kg)*</label>
                       <input
                         id="quantity"
                         className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:outline-none"
-                        placeholder="e.g. 150kg or 50 meters"
-                        type="text"
+                        placeholder="e.g. 150"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
                         value={registerForm.quantity}
                         onChange={(e) => setRegisterForm({ ...registerForm, quantity: e.target.value })}
                         required

@@ -17,6 +17,44 @@ select {
   font: inherit;
 }
 
+.dashboard-shell { position: relative; isolation: isolate; }
+.dashboard-shell::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background-image: linear-gradient(rgba(15,118,110,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(15,118,110,.035) 1px, transparent 1px); background-size: 32px 32px; mask-image: linear-gradient(to bottom, black, transparent 75%); }
+.dashboard-header { background: rgba(255,255,255,.82); box-shadow: 0 24px 70px -35px rgba(15,23,42,.45); border: 1px solid rgba(255,255,255,.9); backdrop-filter: blur(18px); }
+.dashboard-shell section > div, .dashboard-shell article { transition: transform .25s ease, box-shadow .25s ease; }
+.dashboard-shell article:hover { transform: translateY(-2px); box-shadow: 0 22px 45px -28px rgba(15,23,42,.4); }
+
+.brand-lockup { display: inline-flex; align-items: center; gap: 14px; color: white; text-align: left; }
+.brand-lockup span { display: grid; line-height: 1; }
+.brand-lockup strong { font-size: 2rem; letter-spacing: -.06em; }
+.brand-lockup small { margin-top: 7px; color: #a7f3d0; font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; }
+.brand-mark { width: 82px; height: 82px; overflow: visible; filter: drop-shadow(0 14px 24px rgba(16,185,129,.25)); }
+.brand-thread { fill: none; stroke: url(#brand-gradient); stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+.brand-thread--two { stroke-width: 5; opacity: .72; }
+.brand-leaf { fill: url(#brand-gradient); }
+.brand-lockup--compact { display: grid; place-items: center; width: 58px; height: 58px; flex: 0 0 auto; border-radius: 18px; background: linear-gradient(145deg,#062f32,#0f766e); box-shadow: 0 14px 28px -14px rgba(15,118,110,.8); }
+.brand-lockup--compact .brand-mark { width: 48px; height: 48px; }
+
+.login-intro { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; overflow: hidden; background: #031c22; opacity: 1; transition: opacity .7s ease, visibility .7s ease; }
+.login-intro--leaving { opacity: 0; visibility: hidden; }
+.login-intro::before, .login-intro::after { content: ""; position: absolute; width: 48vw; height: 48vw; border-radius: 50%; filter: blur(80px); opacity: .25; animation: intro-drift 4s ease-in-out infinite alternate; }
+.login-intro::before { left: -18vw; top: -20vw; background: #06b6d4; }
+.login-intro::after { right: -18vw; bottom: -22vw; background: #84cc16; animation-delay: -.8s; }
+.login-intro__halo { position: absolute; width: 340px; height: 340px; border: 1px solid rgba(110,231,183,.2); border-radius: 50%; box-shadow: 0 0 0 42px rgba(16,185,129,.04), 0 0 0 84px rgba(6,182,212,.025); animation: intro-halo 2.4s ease-out infinite; }
+.login-intro__content { position: relative; z-index: 1; display: grid; justify-items: center; gap: 20px; animation: intro-rise .8s cubic-bezier(.2,.8,.2,1) both; }
+.login-intro__content .brand-mark { animation: intro-logo 2.6s cubic-bezier(.2,.8,.2,1) both; }
+.login-intro__content .brand-thread { stroke-dasharray: 220; stroke-dashoffset: 220; animation: intro-draw 1.5s .2s ease forwards; }
+.login-intro__content p { color: #d1fae5; font-weight: 700; letter-spacing: .04em; }
+.login-intro__content > small { color: #94a3b8; font-size: .72rem; letter-spacing: .13em; text-transform: uppercase; }
+.login-intro__progress { width: min(280px,70vw); height: 3px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.12); }
+.login-intro__progress span { display: block; height: 100%; transform-origin: left; background: linear-gradient(90deg,#22d3ee,#34d399,#a3e635); animation: intro-progress 3.3s linear forwards; }
+@keyframes intro-draw { to { stroke-dashoffset: 0; } }
+@keyframes intro-logo { 0% { transform: scale(.55) rotate(-18deg); opacity: 0; } 42% { transform: scale(1.08) rotate(3deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes intro-rise { from { transform: translateY(25px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes intro-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes intro-halo { from { transform: scale(.75); opacity: .1; } to { transform: scale(1.2); opacity: .55; } }
+@keyframes intro-drift { to { transform: translate(8vw,6vw) scale(1.15); } }
+@media (prefers-reduced-motion: reduce) { .login-intro *, .login-intro::before, .login-intro::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
+
 button,
 a,
 input,

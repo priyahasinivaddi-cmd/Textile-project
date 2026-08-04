@@ -23,6 +23,10 @@ async def analyze_pipeline(
         le=1.0,
         description="Defect detection sensitivity (0 = lenient, 1 = strict).",
     ),
+    label_text: Optional[str] = Form(
+        None,
+        description="Optional care-label text, for example: 80% Cotton, 20% Polyester.",
+    ),
 ):
     """
     **Textile Waste Intelligence Pipeline**
@@ -64,7 +68,11 @@ async def analyze_pipeline(
 
     # --- Run the analysis pipeline -----------------------------------------
     try:
-        result = analyze_image_file(file_path, sensitivity=sensitivity)
+        result = analyze_image_file(file_path, sensitivity=sensitivity, label_text=label_text)
+    except ValueError as exc:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     except Exception as exc:
         if os.path.exists(file_path):
             os.remove(file_path)

@@ -17,6 +17,7 @@ function Login() {
     try {
       const response = await loginUser(form);
       login(response.data);
+      sessionStorage.setItem("showLoginIntro", "true");
       navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.detail || "Login failed");
