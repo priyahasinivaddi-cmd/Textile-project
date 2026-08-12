@@ -7,6 +7,7 @@ import {
   getInventory,
   updateInventoryItem,
 } from "../services/inventoryService";
+import { downloadDedicatedReport, getAssessments, getSustainabilitySummary } from "../services/sustainabilityService";
 
 const emptyForm = {
   fabric_type: "",
@@ -25,10 +26,14 @@ function ManufacturerDashboard() {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [message, setMessage] = useState("");
+  const [assessments, setAssessments] = useState([]);
+  const [summary, setSummary] = useState({});
 
   const loadBatches = async () => {
-    const response = await getInventory();
+    const [response, assessmentResponse, summaryResponse] = await Promise.all([getInventory(), getAssessments(), getSustainabilitySummary()]);
     setBatches(response.data);
+    setAssessments(assessmentResponse.data);
+    setSummary(summaryResponse.data);
   };
 
   useEffect(() => {
@@ -82,6 +87,13 @@ function ManufacturerDashboard() {
   const removeBatch = async (id) => {
     await deleteInventoryItem(id);
     await loadBatches();
+  };
+
+  const downloadReport = async (type) => {
+    const response = await downloadDedicatedReport(type, "pdf");
+    const url = URL.createObjectURL(response.data);
+    const link = document.createElement("a");
+    link.href = url; link.download = `${type}-report.pdf`; link.click(); URL.revokeObjectURL(url);
   };
 
   return (
@@ -242,13 +254,12 @@ function ManufacturerDashboard() {
         </div>
 
         <div className="rounded-3xl bg-gradient-to-br from-slate-950 to-cyan-800 p-6 text-white shadow-xl">
-          <h2 className="text-2xl font-black">Analytics</h2>
+          <h2 className="text-2xl font-black">Production & Circularity Analytics</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {["Production Waste Analysis", "Circular Economy Insights", "Material Recovery Reports", "Sustainability Performance"].map((item) => (
-              <div key={item} className="rounded-2xl bg-white/10 p-4 font-semibold ring-1 ring-white/15">
-                {item}
-              </div>
-            ))}
+            <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15"><p className="text-xs text-cyan-200">Production waste analysis</p><p className="mt-1 text-2xl font-black">{Number(summary.total_waste_kg || 0).toLocaleString()} kg</p><p className="text-xs text-white/70">across {batches.length} registered batches</p></div>
+            <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15"><p className="text-xs text-cyan-200">Circular economy insight</p><p className="mt-1 text-2xl font-black">{Number(summary.average_circularity_score || 0).toFixed(1)}/100</p><p className="text-xs text-white/70">average circularity score</p></div>
+            <button onClick={() => downloadReport("circular-economy")} className="rounded-2xl bg-white/10 p-4 text-left ring-1 ring-white/15"><p className="font-bold">Material recovery report</p><p className="mt-1 text-xl font-black">{Number(summary.recoverable_material_kg || 0).toLocaleString()} kg</p><span className="text-xs text-cyan-200">Download PDF →</span></button>
+            <button onClick={() => downloadReport("esg")} className="rounded-2xl bg-white/10 p-4 text-left ring-1 ring-white/15"><p className="font-bold">Sustainability performance</p><p className="mt-1 text-xl font-black">{Number(summary.waste_diversion_percentage || 0).toFixed(1)}%</p><span className="text-xs text-cyan-200">{assessments.length} assessed · Download ESG PDF →</span></button>
           </div>
         </div>
       </div>

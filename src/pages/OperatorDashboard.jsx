@@ -1,10 +1,14 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/set-state-in-effect, no-constant-binary-expression */
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getInventory, updateInventoryItem } from "../services/inventoryService";
+import { getAssessments, getSustainabilitySummary } from "../services/sustainabilityService";
+import ReportExportPanel from "../components/ReportExportPanel";
 
 function OperatorDashboard() {
   const [batches, setBatches] = useState([]);
+  const [assessments, setAssessments] = useState([]);
+  const [summary, setSummary] = useState({});
   const [filters, setFilters] = useState({
     fabric_type: "",
     quantity: "",
@@ -12,8 +16,10 @@ function OperatorDashboard() {
   });
 
   const loadBatches = async () => {
-    const response = await getInventory();
+    const [response, assessmentResponse, summaryResponse] = await Promise.all([getInventory(), getAssessments(), getSustainabilitySummary()]);
     setBatches(response.data);
+    setAssessments(assessmentResponse.data);
+    setSummary(summaryResponse.data);
   };
 
   useEffect(() => {
@@ -34,6 +40,8 @@ function OperatorDashboard() {
     await updateInventoryItem(batch.id, { status });
     await loadBatches();
   };
+
+  const opportunities = useMemo(() => assessments.filter((item) => item.recyclability_score >= 60).sort((a, b) => b.recoverable_material_kg - a.recoverable_material_kg), [assessments]);
 
   return (
     <section className="space-y-6">
@@ -124,7 +132,9 @@ function OperatorDashboard() {
         <div className="rounded-3xl bg-gradient-to-br from-emerald-600 to-cyan-600 p-6 text-white shadow-xl">
           <h2 className="text-2xl font-black">Recycling Opportunities</h2>
           <div className="mt-4 grid gap-3">
-            {batches.slice(0, 4).map((batch) => (
+            {opportunities.slice(0, 4).map((item) => <div key={item.id} className="rounded-2xl bg-white/15 p-4 ring-1 ring-white/20"><p className="font-bold">{item.recommended_action} · {item.recoverable_material_kg} kg recoverable</p><p className="text-sm text-white/80">{item.batch_id} · {item.recyclability_score}% recyclable · {item.recommended_processing_method}</p></div>)}
+            {!opportunities.length && <p className="text-sm text-white/80">Calculate assessments to identify ranked recovery opportunities.</p>}
+            {false && batches.slice(0, 4).map((batch) => (
               <div key={batch.id} className="rounded-2xl bg-white/15 p-4 ring-1 ring-white/20">
                 <p className="font-bold">{batch.fabric_type} can be routed for reuse or fiber recovery.</p>
                 <p className="text-sm text-white/80">{batch.waste_batch_id} · {batch.condition}</p>
@@ -138,15 +148,23 @@ function OperatorDashboard() {
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl bg-slate-50 p-4">
               <p className="font-bold">Processing Analytics</p>
-              <p className="text-sm text-slate-500">{batches.filter((b) => b.status === "Processing").length} active batch(es)</p>
+              <p className="text-2xl font-black text-violet-700">{batches.filter((b) => b.status === "Processing").length} active</p><p className="text-sm text-slate-500">Average feasibility {assessments.length ? (assessments.reduce((sum, item) => sum + item.processing_feasibility_score, 0) / assessments.length).toFixed(1) : 0}%</p>
             </div>
             <div className="rounded-2xl bg-slate-50 p-4">
               <p className="font-bold">Recovery Statistics</p>
-              <p className="text-sm text-slate-500">{batches.filter((b) => b.status === "Recycled").length} recycled batch(es)</p>
+              <p className="text-2xl font-black text-emerald-700">{Number(summary.recoverable_material_kg || 0).toLocaleString()} kg</p><p className="text-sm text-slate-500">{batches.filter((b) => b.status === "Recycled").length} recycled · {Number(summary.waste_diversion_percentage || 0).toFixed(1)}% diverted</p>
             </div>
           </div>
         </div>
       </div>
+      <ReportExportPanel
+        title="Recycling Facility Reports"
+        description="Classification and recovery reports for facility processing and recycling operations."
+        reports={[
+          { type: "waste-classification", label: "Waste Classification Report", description: "Batch classifications, fabric types, conditions, quality, quantities, and statuses." },
+          { type: "recycling", label: "Recycling Report", description: "Recyclability, processing methods, recoverable material, and recovery recommendations." },
+        ]}
+      />
     </section>
   );
 }

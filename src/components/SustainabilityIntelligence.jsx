@@ -81,6 +81,19 @@ function SustainabilityIntelligence({ role }) {
     ];
   }, [assessments, summary]);
 
+  const resourceConservation = useMemo(() => {
+    return assessments.reduce((totals, assessment) => {
+      const batch = inventoryByBatch.get(assessment.batch_id) || {};
+      const fabric = String(batch.fabric_type || "").toLowerCase();
+      const recovered = Number(assessment.recoverable_material_kg || 0);
+      if (fabric.includes("cotton")) totals.cotton += recovered;
+      if (fabric.includes("polyester")) totals.polyester += recovered;
+      if (assessment.recommended_action === "Direct reuse") totals.reused += recovered;
+      totals.total += recovered;
+      return totals;
+    }, { cotton: 0, polyester: 0, reused: 0, total: 0 });
+  }, [assessments, inventoryByBatch]);
+
   const calculateMissing = async () => {
     setCalculating(true); setError("");
     try {
@@ -140,6 +153,28 @@ function SustainabilityIntelligence({ role }) {
         <article className="rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200"><p className="text-sm font-bold text-teal-700">Circular economy analysis</p><h3 className="mt-1 text-xl font-black text-slate-950">Material outcomes</h3><div className="mt-4 space-y-4">{circularEconomy.map(([label, value, color]) => <div key={label}><div className="mb-1 flex justify-between text-sm"><span>{label}</span><b>{number(value, 1)}%</b></div><div className="h-2.5 rounded-full bg-slate-100"><div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(value, 100)}%` }} /></div></div>)}</div></article>
         <article className="rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200"><p className="text-sm font-bold text-teal-700">Sustainability benchmark</p><h3 className="mt-1 text-xl font-black text-slate-950">{summary.benchmark_status === "meeting" ? "Above industry benchmark" : "Below industry benchmark"}</h3><div className="mt-5 flex items-end gap-4"><div><p className="text-xs text-slate-500">Your diversion</p><p className="text-3xl font-black text-emerald-700">{number(summary.waste_diversion_percentage, 1)}%</p></div><div><p className="text-xs text-slate-500">Benchmark</p><p className="text-2xl font-black text-slate-500">{number(summary.benchmark_diversion_percentage, 1)}%</p></div></div><p className="mt-4 text-sm text-slate-600">Recoverable material: <b>{number(summary.recoverable_material_kg, 2)} kg</b></p></article>
       </div>
+
+      <article id="resource-conservation" className="scroll-mt-6 overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-slate-200">
+        <div className="flex flex-col gap-2 border-b border-slate-100 p-6 sm:flex-row sm:items-end sm:justify-between">
+          <div><p className="text-sm font-bold text-teal-700">Resource conservation estimation</p><h3 className="mt-1 text-2xl font-black text-slate-950">Materials preserved through circular recovery</h3></div>
+          <p className="text-xs font-semibold text-slate-500">Calculated from assessed recoverable quantities</p>
+        </div>
+        <div className="grid gap-px bg-slate-200 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            ["Cotton conserved", resourceConservation.cotton, "Supports reduced demand for virgin cotton", "text-emerald-700"],
+            ["Polyester recovered", resourceConservation.polyester, "Material available for fibre recovery", "text-cyan-700"],
+            ["Fabric reusable", resourceConservation.reused, "Material suitable for direct reuse", "text-violet-700"],
+            ["Total recoverable", resourceConservation.total, "All recoverable textile resources", "text-teal-700"],
+          ].map(([label, value, description, tone]) => (
+            <div key={label} className="bg-white p-5">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p>
+              <p className={`mt-2 text-3xl font-black ${tone}`}>{number(value, 2)} kg</p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">{description}</p>
+            </div>
+          ))}
+        </div>
+        <p className="bg-amber-50 px-6 py-3 text-xs text-amber-800">Planning estimates use each batch&apos;s assessed material-recovery rate. Mixed fabrics are grouped using the registered fabric description.</p>
+      </article>
 
       <article id="circularity-decisions" className="scroll-mt-6 overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-slate-200"><div className="border-b border-slate-100 p-6"><p className="text-sm font-bold text-teal-700">Waste scoring & AI recommendations</p><h3 className="mt-1 text-2xl font-black text-slate-950">Batch Circularity Decisions</h3><p className="mt-2 text-sm text-slate-500">A clear decision summary for every assessed waste batch.</p></div><div className="overflow-x-auto"><table className="min-w-[1180px] w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500"><tr><th className="p-4">Batch</th><th className="p-4">Recyclability</th><th className="p-4">Reuse</th><th className="p-4">Sustainability</th><th className="p-4">Material recovery</th><th className="p-4">Circularity</th><th className="p-4">Recommended decision</th><th className="p-4">Last calculated</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredAssessments.map((item) => <tr key={item.id} className="align-top transition hover:bg-teal-50/40"><td className="p-4 font-black text-slate-900">{item.batch_id}</td><td className="p-4 font-bold text-cyan-700">{number(item.recyclability_score, 1)} / 100</td><td className="p-4 font-bold text-violet-700">{number(item.reuse_score, 1)} / 100</td><td className="p-4 font-bold text-emerald-700">{number(item.sustainability_score, 1)} / 100</td><td className="p-4"><b>{number(item.recoverable_material_kg, 2)} kg</b><span className="mt-1 block text-xs text-slate-500">{number(item.material_recovery_score, 1)}% recoverable</span></td><td className="p-4"><b className="text-xl text-slate-950">{number(item.circularity_score, 1)}</b><span className={`mt-2 block w-fit rounded-full px-2.5 py-1 text-[11px] font-bold ${categoryTone(item.circularity_category)}`}>{item.circularity_category}</span></td><td className="p-4"><b className="text-slate-900">{item.recommended_action}</b><span className="mt-1 block text-xs leading-5 text-slate-500">{item.recommended_processing_method}</span></td><td className="p-4 text-xs leading-5 text-slate-500">{new Date(item.updated_at).toLocaleString()}<span className="block">Calculated {item.audit_history?.length || 1} time(s)</span></td></tr>)}{!filteredAssessments.length && <tr><td colSpan="8" className="p-10 text-center text-slate-500">No assessed batches are available.</td></tr>}</tbody></table></div></article>
     </section>

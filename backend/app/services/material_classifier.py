@@ -58,6 +58,13 @@ def _material_from_composition(prediction: dict) -> dict | None:
     if predicted_fabric and predicted_fabric != "Uncertain":
         confidence = max(0.0, min(float(prediction.get("confidence", 0.0)) / 100.0, 1.0))
         top_predictions = prediction.get("top_predictions") or []
+        if str(predicted_fabric).strip().lower() == "blend":
+            return {
+                "fabric_type": "Blend",
+                "confidence": round(confidence, 4),
+                "fiber_composition": "Mixed fibre blend; exact percentages require a garment label or laboratory test",
+                "blend_type": "mixed",
+            }
         return {
             "fabric_type": str(predicted_fabric),
             "confidence": round(confidence, 4),

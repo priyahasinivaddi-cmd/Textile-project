@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getInventory } from "../services/inventoryService";
 import { getAssessments } from "../services/sustainabilityService";
+import ReportExportPanel from "../components/ReportExportPanel";
 
 const number = (value, digits = 1) => Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: digits });
 
@@ -32,7 +33,7 @@ function ManagerDashboard() {
   );
 
   return (
-    <section>
+    <section className="space-y-6">
       <div className="overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-slate-200">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -75,6 +76,16 @@ function ManagerDashboard() {
           </table>
         </div>
       </div>
+      <ReportExportPanel
+        title="Sustainability Officer Reports"
+        description="Environmental, sustainability, ESG, and circularity reports available to the Sustainability Officer."
+        reports={[
+          { type: "sustainability", label: "Sustainability Report", description: "Sustainability metrics, waste diversion, carbon savings, and recovery performance." },
+          { type: "environmental-impact", label: "Environmental Impact Report", description: "CO₂ savings, water savings, landfill reduction, and environmental scores." },
+          { type: "circular-economy", label: "Circular Economy Report", description: "Circularity, reuse potential, material recovery, and recommended decisions." },
+          { type: "esg", label: "ESG Report", description: "Waste, diversion, sustainability, and circularity performance for ESG reporting." },
+        ]}
+      />
     </section>
   );
 }

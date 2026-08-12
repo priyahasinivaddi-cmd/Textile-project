@@ -9,6 +9,7 @@ import AdminDashboard from "./AdminDashboard";
 import ManagerDashboard from "./ManagerDashboard";
 import ManufacturerDashboard from "./ManufacturerDashboard";
 import OperatorDashboard from "./OperatorDashboard";
+import NotificationCenter from "../components/NotificationCenter";
 
 const roleLabels = {
   admin: "Admin",
@@ -36,7 +37,7 @@ const Dashboard = () => {
   };
   const roleNavigation = {
     admin: [["Overview", "#role-dashboard"], ["All Waste Details", "#waste-details"], ["Sustainability", "#sustainability-intelligence"]],
-    manager: [["Sustainability", "#sustainability-intelligence"], ["Waste Overview", "#role-dashboard"], ["Circularity Decisions", "#circularity-decisions"]],
+    manager: [["Sustainability", "#sustainability-intelligence"], ["Resource Conservation", "#resource-conservation"], ["Waste Overview", "#role-dashboard"], ["Circularity Decisions", "#circularity-decisions"]],
     manufacturer: [["Overview", "#role-dashboard"], ["Register Waste", "/upload"], ["Inventory", "/inventory"], ["Image Analysis", "/analyze"]],
     operator: [["Overview", "#role-dashboard"], ["Inventory", "/inventory"], ["Image Analysis", "/analyze"]],
   };
@@ -63,7 +64,8 @@ const Dashboard = () => {
             </p>
             </div>
           </div>
-          <div>
+          <div className="flex items-center gap-3">
+            <NotificationCenter user={user} />
             <button
               onClick={logout}
               className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800"

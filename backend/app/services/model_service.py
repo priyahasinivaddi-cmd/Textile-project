@@ -19,7 +19,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 ARTIFACT_DIR = PROJECT_ROOT / "waste-classification"
 MODEL_PATH = ARTIFACT_DIR / "best_fabric_model.keras"
 CLASS_NAMES_PATH = ARTIFACT_DIR / "class_names.json"
-EXPECTED_INPUT_SIZE = (160, 160)
+EXPECTED_INPUT_SIZE = (224, 224)
 CONFIDENCE_THRESHOLD = 70.0
 
 
@@ -92,7 +92,7 @@ class ModelService:
                 pixels = np.asarray(image, dtype=np.float32)
         except (UnidentifiedImageError, OSError, ValueError, SyntaxError) as exc:
             raise ValueError("The uploaded file is not a valid supported image") from exc
-        # The production model embeds MobileNetV2 preprocessing and expects
+        # The production model embeds EfficientNetB0 preprocessing and expects
         # ordinary RGB values in the [0, 255] range.
         return np.expand_dims(pixels, axis=0)
 

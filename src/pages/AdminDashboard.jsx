@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { getInventory } from "../services/inventoryService";
 import { registerUser } from "../services/authService";
-import { deleteUser, getUsers } from "../services/userService";
+import { deleteUser, getSystemStatus, getUsers } from "../services/userService";
+import { downloadDedicatedReport } from "../services/sustainabilityService";
 
 const emptyUser = {
   name: "",
@@ -16,14 +17,18 @@ function AdminDashboard() {
   const [batches, setBatches] = useState([]);
   const [userForm, setUserForm] = useState(emptyUser);
   const [message, setMessage] = useState("");
+  const [system, setSystem] = useState(null);
+  const [reportBusy, setReportBusy] = useState("");
 
   const loadData = async () => {
-    const [userResponse, inventoryResponse] = await Promise.all([
+    const [userResponse, inventoryResponse, systemResponse] = await Promise.all([
       getUsers(),
       getInventory(),
+      getSystemStatus(),
     ]);
     setUsers(userResponse.data);
     setBatches(inventoryResponse.data);
+    setSystem(systemResponse.data);
   };
 
   useEffect(() => {
@@ -52,6 +57,20 @@ function AdminDashboard() {
   const removeUser = async (id) => {
     await deleteUser(id);
     await loadData();
+  };
+
+  const downloadReport = async (type, format) => {
+    const key = `${type}-${format}`;
+    setReportBusy(key);
+    try {
+      const response = await downloadDedicatedReport(type, format);
+      const url = URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${type}-report.${format === "excel" ? "xlsx" : "pdf"}`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } finally { setReportBusy(""); }
   };
 
   return (
@@ -142,22 +161,27 @@ function AdminDashboard() {
           <h2 className="text-2xl font-black text-slate-950">System Monitoring</h2>
           <div className="mt-4 space-y-3">
             <p className="rounded-2xl bg-emerald-50 p-4 font-bold text-emerald-700">
-              API status: Online
+              API: {system?.api_status || "checking"} · Database: {system?.database_status || "checking"}
             </p>
             <p className="rounded-2xl bg-slate-50 p-4 font-bold text-slate-700">
-              Errors/logs: No active frontend errors
+              Uptime: {Math.floor((system?.uptime_seconds || 0) / 60)} min · Assessment coverage: {system?.assessment_coverage_percentage || 0}%
             </p>
+            <p className="text-xs text-slate-500">Last checked: {system?.checked_at ? new Date(system.checked_at).toLocaleString() : "Checking…"}</p>
           </div>
         </div>
 
         <div className="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
           <h2 className="text-2xl font-black text-slate-950">Report Management</h2>
           <div className="mt-4 space-y-3">
-            {["Manufacturer waste report", "Recycling recovery report", "Sustainability ESG report"].map((report) => (
-              <button key={report} className="w-full rounded-2xl bg-slate-100 px-4 py-3 text-left font-bold text-slate-700">
-                View / download {report}
-              </button>
+            {[["waste-classification", "Waste classification"], ["recycling", "Recycling"], ["sustainability", "Sustainability"], ["environmental-impact", "Environmental impact"], ["circular-economy", "Circular economy"], ["esg", "ESG sustainability"]].map(([type, label]) => (
+              <div key={type} className="rounded-2xl bg-slate-100 p-3">
+                <p className="font-bold text-slate-800">{label}</p>
+                <div className="mt-2 flex gap-2"><button disabled={!!reportBusy} onClick={() => downloadReport(type, "pdf")} className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">{reportBusy === `${type}-pdf` ? "Preparing…" : "PDF"}</button><button disabled={!!reportBusy} onClick={() => downloadReport(type, "excel")} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white">{reportBusy === `${type}-excel` ? "Preparing…" : "Excel"}</button></div>
+              </div>
             ))}
+            <div className="flex justify-between rounded-2xl bg-white/10 p-3"><span>Assessment coverage</span><span className="font-black">{system?.assessment_coverage_percentage || 0}%</span></div>
+            <div className="flex justify-between rounded-2xl bg-white/10 p-3"><span>Processing batches</span><span className="font-black">{batches.filter((batch) => batch.status === "Processing").length}</span></div>
+            <div className="flex justify-between rounded-2xl bg-white/10 p-3"><span>Waste diversion progress</span><span className="font-black">{totalGenerated ? Math.round(totalRecycled / totalGenerated * 100) : 0}%</span></div>
           </div>
         </div>
       </div>

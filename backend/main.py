@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.database import Base, engine, ensure_database_schema
 from app.models import assessment as _assessment_model  # register ORM model before create_all
-from app.routes import analytics, assessments, inventory, model, pipeline, recommendations, sustainability_reports, user
+from app.routes import admin, analytics, assessments, comprehensive_reports, inventory, model, notifications, pipeline, recommendations, sustainability_reports, user
 
 app = FastAPI()
 
@@ -33,6 +33,9 @@ app.include_router(assessments.router)
 app.include_router(analytics.router)
 app.include_router(recommendations.router)
 app.include_router(sustainability_reports.router)
+app.include_router(comprehensive_reports.router)
+app.include_router(admin.router)
+app.include_router(notifications.router)
 app.include_router(model.router)
 app.include_router(pipeline.router)
 
