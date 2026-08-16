@@ -103,6 +103,8 @@ class PipelineResponse(BaseModel):
     image_url: Optional[str] = Field(
         None, description="Relative URL to the uploaded image served via /static."
     )
+    analysis_id: Optional[str] = Field(None, description="Persisted analysis identifier.")
+    review_status: Optional[str] = Field(None, description="Human review workflow status.")
     features: ImageFeatures = Field(
         ..., description="Visual features extracted from the uploaded image."
     )
@@ -115,6 +117,9 @@ class PipelineResponse(BaseModel):
     recommendations: List[str] = Field(
         ..., description="Ordered list of circular economy recovery recommendations."
     )
+    ai_predictions: Optional[dict[str, Any]] = Field(None, description="Promoted multitask model outputs and uncertainty metadata.")
+    destination_intelligence: Optional[dict[str, Any]] = Field(None, description="Calibrated fused destination probabilities and explainability evidence.")
+    ai_disclaimer: str = Field(..., description="Required operational-use disclaimer.")
 
     class Config:
         json_schema_extra = {

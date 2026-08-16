@@ -1,0 +1,9 @@
+datasets>=4.0,<5
+huggingface-hub>=1.0,<2
+pyarrow>=18,<22
+tensorflow>=2.16,<2.22
+scikit-learn>=1.4,<2
+Pillow>=10,<13
+numpy>=1.26,<3
+xgboost>=2.1,<4
+shap>=0.46,<1

@@ -99,58 +99,24 @@ function ManufacturerDashboard() {
   return (
     <section className="space-y-6">
 
-      {/* ── AI Analysis Quick Actions ── */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div>
         <Link
-          to="/upload"
+          to="/analyze"
           className="group flex items-center gap-4 rounded-3xl bg-gradient-to-br from-cyan-600 to-emerald-600 p-5 text-white shadow-lg shadow-cyan-200 transition hover:-translate-y-0.5 hover:shadow-cyan-300"
         >
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-2xl">
             🔬
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-white/70">AI Pipeline</p>
-            <h3 className="text-lg font-black">Upload &amp; Analyse Waste</h3>
-            <p className="text-xs text-white/80">Upload textile image → AI classifies material &amp; waste</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-white/70">Guided workflow</p>
+            <h3 className="text-lg font-black">Analyse and register textile waste</h3>
+            <p className="text-xs text-white/80">Upload, classify, review and save a batch in one place</p>
           </div>
           <svg className="ml-auto h-5 w-5 text-white/60 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </Link>
 
-        <Link
-          to="/composition-prediction"
-          className="group flex items-center gap-4 rounded-3xl bg-gradient-to-br from-violet-600 to-cyan-600 p-5 text-white shadow-lg shadow-violet-200 transition hover:-translate-y-0.5"
-        >
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-2xl">
-            %
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-white/70">Trained model</p>
-            <h3 className="text-lg font-black">Predict Composition</h3>
-            <p className="text-xs text-white/80">Estimate fibre percentages from a fabric image</p>
-          </div>
-          <svg className="ml-auto h-5 w-5 text-white/60 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-
-        <Link
-          to="/analyze"
-          className="group flex items-center gap-4 rounded-3xl bg-gradient-to-br from-slate-800 to-cyan-900 p-5 text-white shadow-lg ring-1 ring-slate-700 transition hover:-translate-y-0.5"
-        >
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-2xl">
-            ♻️
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Standalone</p>
-            <h3 className="text-lg font-black">Waste Intelligence Platform</h3>
-            <p className="text-xs text-slate-400">Analyse images without saving to inventory</p>
-          </div>
-          <svg className="ml-auto h-5 w-5 text-slate-500 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -168,13 +134,13 @@ function ManufacturerDashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <form onSubmit={handleSubmit} className="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
+        {editingId ? <form onSubmit={handleSubmit} className="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
           <div className="mb-5">
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-emerald-600">
               Waste Registration
             </p>
             <h2 className="mt-1 text-2xl font-black text-slate-950">
-              {editingId ? "Edit Waste Batch" : "Create Waste Batch"}
+              Edit Waste Batch
             </h2>
             <p className="mt-1 text-sm text-slate-500">
               Batch ID is generated automatically when saved.
@@ -198,9 +164,9 @@ function ManufacturerDashboard() {
           {message && <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{message}</p>}
 
           <button className="mt-5 w-full rounded-2xl bg-gradient-to-r from-cyan-600 to-emerald-500 px-5 py-3 font-black text-white shadow-lg shadow-cyan-200 transition hover:-translate-y-0.5">
-            {editingId ? "Save Changes" : "Register Waste"}
+            Save Changes
           </button>
-        </form>
+        </form> : <div className="flex flex-col justify-center rounded-3xl bg-gradient-to-br from-cyan-50 to-emerald-50 p-6 shadow-xl ring-1 ring-emerald-100"><p className="text-sm font-black uppercase tracking-wider text-emerald-700">New batch</p><h2 className="mt-2 text-2xl font-black text-slate-950">Start with image analysis</h2><p className="mt-2 text-sm leading-6 text-slate-600">The guided workflow identifies material and condition before collecting the source and quantity, preventing duplicate data entry.</p><Link to="/analyze" className="mt-5 inline-flex w-fit rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white">Analyse and register</Link></div>}
 
         <div className="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-600">
@@ -213,6 +179,7 @@ function ManufacturerDashboard() {
                 <tr>
                   <th className="p-3">Batch</th>
                   <th className="p-3">Fabric</th>
+                  <th className="p-3">Uploaded by</th>
                   <th className="p-3">Status</th>
                   <th className="p-3">Actions</th>
                 </tr>
@@ -222,6 +189,7 @@ function ManufacturerDashboard() {
                   <tr key={batch.id} className="border-t border-slate-100">
                     <td className="p-3 font-bold text-slate-900">{batch.waste_batch_id}</td>
                     <td className="p-3">{batch.fabric_type}</td>
+                    <td className="p-3 font-semibold text-slate-700">{batch.uploaded_by || "Unknown user"}</td>
                     <td className="p-3">
                       <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">
                         {batch.status}

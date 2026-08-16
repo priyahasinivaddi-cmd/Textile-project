@@ -11,5 +11,8 @@ export const deleteInventoryItem = (id) => API.delete(`/inventory/${id}`);
 export const downloadWasteReport = () =>
   API.get("/inventory/report/pdf", { responseType: "blob" });
 
+export const downloadWasteCsv = () =>
+  API.get("/inventory/report/csv", { responseType: "blob" });
+
 export const downloadWasteItemReport = (id) =>
   API.get(`/inventory/${id}/report/pdf`, { responseType: "blob" });

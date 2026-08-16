@@ -1,0 +1,32 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20, cache: npm}
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: {POSTGRES_DB: textile_test, POSTGRES_USER: textile, POSTGRES_PASSWORD: textile}
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U textile -d textile_test" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://textile:textile@localhost:5432/textile_test
+      SECRET_KEY: ci-only-secret-at-least-32-characters
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11', cache: pip}
+      - run: pip install -r backend/requirements.txt
+      - run: pytest -q
+        working-directory: backend
+      - run: python ml/evaluation/evaluate_all.py

@@ -10,13 +10,14 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.assessment import WasteAssessment
 from app.models.user import InventoryItem, User
+from app.utils.permissions import require_admin
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 STARTED_AT = time.time()
 
 
 @router.get("/system-status")
-def system_status(db: Session = Depends(get_db)):
+def system_status(db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
     database_status = "online"
     try:
         db.execute(text("SELECT 1"))

@@ -3,9 +3,12 @@ from datetime import date, datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from app.database import get_db
 from app.models.announcement import PlatformAnnouncement
+from app.models.notification import NotificationReceipt
+from app.models.operations import NotificationEvent
 from app.models.user import InventoryItem, User
 from app.services.sustainability_service import aggregate_assessments
 from app.utils.permissions import get_current_user, scope_inventory_query
@@ -69,7 +72,27 @@ def list_notifications(db: Session = Depends(get_db), user: User = Depends(get_c
     announcements = db.query(PlatformAnnouncement).filter(PlatformAnnouncement.active.is_(True), PlatformAnnouncement.audience.in_(["all", user.role])).order_by(PlatformAnnouncement.id.desc()).all()
     for announcement in announcements:
         alerts.append(_item(f"announcement-{announcement.id}", "announcement", announcement.title, announcement.message, announcement.severity, None, announcement.created_at))
-    return alerts
+    events = db.query(NotificationEvent).filter(or_(NotificationEvent.user_id == user.id, NotificationEvent.user_id.is_(None))).order_by(NotificationEvent.created_at.desc()).limit(100).all()
+    for event in events:
+        alerts.append(_item(f"event-{event.id}", event.category, event.title, event.message, event.severity, event.action_url, event.created_at))
+    read = {item.notification_key for item in db.query(NotificationReceipt).filter(NotificationReceipt.user_id == user.id).all()}
+    return [{**alert, "read": alert["id"] in read} for alert in alerts]
+
+
+@router.post("/read-all", status_code=status.HTTP_204_NO_CONTENT)
+def mark_all_notifications_read(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    alerts = list_notifications(db, user)
+    existing = {item.notification_key for item in db.query(NotificationReceipt).filter(NotificationReceipt.user_id == user.id).all()}
+    db.add_all(NotificationReceipt(user_id=user.id, notification_key=item["id"]) for item in alerts if item["id"] not in existing)
+    db.commit()
+
+
+@router.post("/{notification_key}/read", status_code=status.HTTP_204_NO_CONTENT)
+def mark_notification_read(notification_key: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    existing = db.query(NotificationReceipt).filter(NotificationReceipt.user_id == user.id, NotificationReceipt.notification_key == notification_key).first()
+    if not existing:
+        db.add(NotificationReceipt(user_id=user.id, notification_key=notification_key))
+        db.commit()
 
 
 @router.post("/announcements", status_code=status.HTTP_201_CREATED)

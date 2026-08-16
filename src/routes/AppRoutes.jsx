@@ -3,9 +3,10 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import Inventory from "../pages/Inventory";
-import UploadWaste from "../pages/UploadWaste";
 import WasteAnalysis from "../pages/WasteAnalysis";
-import TextileComposition from "../pages/TextileComposition";
+import ModelInsights from "../pages/ModelInsights";
+import TrainingFeedback from "../pages/TrainingFeedback";
+import Landing from "../pages/Landing";
 import { useAuth } from "../context/AuthContext";
 
 const PrivateRoute = ({ children }) => {
@@ -17,7 +18,7 @@ function AppRoutes() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/" element={<Landing />} />
 
         <Route path="/login" element={<Login />} />
 
@@ -41,26 +42,14 @@ function AppRoutes() {
           }
         />
 
-        <Route
-          path="/upload"
-          element={
-            <PrivateRoute>
-              <UploadWaste />
-            </PrivateRoute>
-          }
-        />
+        <Route path="/upload" element={<Navigate to="/analyze" replace />} />
 
         {/* Public standalone analysis page — no auth required */}
-        <Route path="/analyze" element={<WasteAnalysis />} />
+        <Route path="/analyze" element={<PrivateRoute><WasteAnalysis /></PrivateRoute>} />
 
-        <Route
-          path="/composition-prediction"
-          element={
-            <PrivateRoute>
-              <TextileComposition />
-            </PrivateRoute>
-          }
-        />
+        <Route path="/composition-prediction" element={<Navigate to="/analyze" replace />} />
+        <Route path="/model-insights" element={<PrivateRoute><ModelInsights /></PrivateRoute>} />
+        <Route path="/training-feedback" element={<PrivateRoute><TrainingFeedback /></PrivateRoute>} />
       </Routes>
     </Router>
   );

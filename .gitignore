@@ -66,3 +66,13 @@ waste-classification/accuracy.png
 waste-classification/test_accuracy.png
 waste-classification/test_loss.png
 waste-classification/test_training_history.csv
+
+# Downloaded ML data, caches, trained artifacts, and generated evaluations
+.hf-cache/
+ml/data/raw/
+ml/data/processed/
+ml/data/reports/
+ml/artifacts/
+ml/experiments/records/
+ml/evaluation/*.json
+*.joblib

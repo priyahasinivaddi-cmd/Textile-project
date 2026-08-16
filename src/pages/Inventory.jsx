@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { downloadWasteItemReport, getInventory } from "../services/inventoryService";
+import { downloadWasteCsv, downloadWasteItemReport, downloadWasteReport, getInventory } from "../services/inventoryService";
 
 const statusStyles = {
   pending: "bg-amber-50 text-amber-700 ring-amber-200",
@@ -20,6 +20,8 @@ function Inventory() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [downloadingId, setDownloadingId] = useState(null);
   const [downloadError, setDownloadError] = useState("");
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [exporting, setExporting] = useState("");
 
   useEffect(() => {
     const loadInventory = async () => {
@@ -52,6 +54,7 @@ function Inventory() {
         item.source,
         item.quantity,
         item.condition,
+        item.uploaded_by,
       ].some((value) => normalize(value).includes(query));
       return matchesStatus && matchesSearch;
     });
@@ -80,6 +83,22 @@ function Inventory() {
     }
   };
 
+  const exportAll = async (format) => {
+    setExporting(format);
+    setDownloadError("");
+    try {
+      const response = format === "csv" ? await downloadWasteCsv() : await downloadWasteReport();
+      const url = URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `textile-waste-batches.${format}`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (requestError) {
+      setDownloadError(requestError.response?.data?.detail || "The waste-batch export could not be downloaded.");
+    } finally { setExporting(""); }
+  };
+
   return (
     <main className="min-h-screen px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -98,6 +117,8 @@ function Inventory() {
             <Link to="/upload" className="rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-4 py-2.5 text-sm font-black shadow-lg">
               + Register waste
             </Link>
+            <button type="button" onClick={() => exportAll("csv")} disabled={!!exporting} className="rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold ring-1 ring-white/20 disabled:opacity-60">{exporting === "csv" ? "Exporting…" : "Export all CSV"}</button>
+            <button type="button" onClick={() => exportAll("pdf")} disabled={!!exporting} className="rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold ring-1 ring-white/20 disabled:opacity-60">{exporting === "pdf" ? "Exporting…" : "Export all PDF"}</button>
           </nav>
         </header>
 
@@ -152,6 +173,7 @@ function Inventory() {
               <p className="mt-1 text-sm text-slate-500">
                 {data.length ? "Try changing the search term or status." : "Register your first waste batch to see it here."}
               </p>
+              {!data.length && <Link to="/analyze" className="mt-5 inline-flex rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-black text-white">Analyse and register a batch</Link>}
             </div>
           ) : (
             <div className="mt-6 overflow-x-auto">
@@ -162,8 +184,9 @@ function Inventory() {
                     <th className="px-3 py-3">Source</th>
                     <th className="px-3 py-3">Quantity</th>
                     <th className="px-3 py-3">Collected</th>
+                    <th className="px-3 py-3">Uploaded by</th>
                     <th className="px-3 py-3">Status</th>
-                    <th className="px-3 py-3 text-right">Report</th>
+                    <th className="px-3 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -180,12 +203,14 @@ function Inventory() {
                         <td className="px-3 py-4 text-slate-700">{item.source}</td>
                         <td className="px-3 py-4 font-bold text-slate-800">{item.quantity}</td>
                         <td className="px-3 py-4 text-slate-600">{item.collection_date || "Not provided"}</td>
+                        <td className="px-3 py-4 font-semibold text-slate-700">{item.uploaded_by || "Unknown user"}</td>
                         <td className="px-3 py-4">
                           <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${style}`}>
                             {item.status || "Unspecified"}
                           </span>
                         </td>
                         <td className="px-3 py-4 text-right">
+                          <button type="button" onClick={() => setSelectedItem(item)} className="mr-2 rounded-xl bg-cyan-50 px-4 py-2.5 text-xs font-black text-cyan-800 ring-1 ring-cyan-100">View</button>
                           <button
                             type="button"
                             disabled={downloadingId === item.id}
@@ -205,6 +230,23 @@ function Inventory() {
           )}
         </section>
       </div>
+      {selectedItem && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/45 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="batch-detail-title" onMouseDown={event => { if (event.target === event.currentTarget) setSelectedItem(null); }}>
+          <aside className="h-full w-full max-w-lg overflow-y-auto bg-white p-6 shadow-2xl sm:p-8">
+            <div className="flex items-start justify-between gap-4">
+              <div><p className="text-xs font-black uppercase tracking-wider text-cyan-700">Batch detail</p><h2 id="batch-detail-title" className="mt-1 text-3xl font-black text-slate-950">{selectedItem.waste_batch_id}</h2></div>
+              <button type="button" onClick={() => setSelectedItem(null)} aria-label="Close batch details" className="rounded-full bg-slate-100 px-3 py-2 font-black text-slate-700">×</button>
+            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {[["Fabric", selectedItem.fabric_type], ["Quantity", selectedItem.quantity], ["Source", selectedItem.source], ["Condition", selectedItem.condition], ["Colour", selectedItem.color || "Not recorded"], ["Collected", selectedItem.collection_date || "Not provided"], ["Uploaded by", selectedItem.uploaded_by || "Unknown user"], ["Status", selectedItem.status || "Unspecified"], ["Assigned to", selectedItem.assigned_to || "Not assigned"]].map(([label, value]) => (
+                <div key={label} className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100"><p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p><p className="mt-1 font-black text-slate-900">{value}</p></div>
+              ))}
+            </div>
+            <div className="mt-6 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-100"><strong>AI-assisted record.</strong> Material and recovery recommendations are estimates and should be confirmed by a reviewer.</div>
+            <button type="button" onClick={() => downloadItemPdf(selectedItem)} disabled={downloadingId === selectedItem.id} className="mt-6 w-full rounded-xl bg-slate-950 px-4 py-3 font-black text-white disabled:opacity-60">{downloadingId === selectedItem.id ? "Preparing…" : "Download complete PDF"}</button>
+          </aside>
+        </div>
+      )}
     </main>
   );
 }

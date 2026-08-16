@@ -1,0 +1,14 @@
+{
+  "dataset_id": "fnauman/fashion-second-hand-front-only-rgb",
+  "dataset_revision": "b2559ac0157ea9b6913a65062877f487952e690b",
+  "seed": 42,
+  "backbone": "b0",
+  "image_size": 224,
+  "batch_size": 32,
+  "epochs": 15,
+  "learning_rate": 0.0003,
+  "validation_fraction": 0.15,
+  "minimum_class_count": 25,
+  "confidence_threshold": 0.7,
+  "heads": ["usage", "type", "condition", "material"]
+}

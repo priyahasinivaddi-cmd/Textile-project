@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { analyzeImage } from "../services/pipelineService";
+import { analyzeImage, reviewAnalysis } from "../services/pipelineService";
+import { createInventoryItem } from "../services/inventoryService";
 
 // ─── Pipeline step definitions ─────────────────────────────────────────────
 const PIPELINE_STEPS = [
@@ -30,6 +31,7 @@ const QUALITY_BADGE = {
   low:    "bg-rose-50 text-rose-700 border-rose-200",
 };
 const REUSE_COLOR = { High: "text-emerald-600", Medium: "text-amber-500", Low: "text-rose-500" };
+const FABRIC_OPTIONS = ["Cotton", "Polyester", "Wool", "Silk", "Linen", "Denim", "Nylon", "Rayon", "Acrylic", "Mixed Fabrics"];
 
 // ─── Tiny helper components ─────────────────────────────────────────────────
 function StepRow({ step, index }) {
@@ -70,6 +72,7 @@ export default function WasteAnalysis() {
   const [file, setFile]         = useState(null);
   const [preview, setPreview]   = useState(null);
   const [sensitivity, setSens]  = useState(50);
+  const [labelText, setLabelText] = useState("");
   const [isDragging, setDrag]   = useState(false);
 
   const [steps, setSteps]       = useState(() => PIPELINE_STEPS.map(s => ({ ...s, status: "idle" })));
@@ -77,6 +80,12 @@ export default function WasteAnalysis() {
   const [result, setResult]     = useState(null);
   const [error, setError]       = useState("");
   const [activeTab, setTab]     = useState("features");
+  const [review, setReview] = useState({ decision: "accept", destination: "Reuse", reason: "" });
+  const [reviewing, setReviewing] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState("");
+  const [registerForm, setRegisterForm] = useState({ source: "", quantity: "", collection_date: new Date().toISOString().slice(0, 10) });
+  const [saveState, setSaveState] = useState({ saving: false, message: "", error: "" });
+  const [confirmedMaterial, setConfirmedMaterial] = useState("");
 
   const fileRef    = useRef(null);
   const resultsRef = useRef(null);
@@ -103,21 +112,18 @@ export default function WasteAnalysis() {
   const updateStep = (i, status) =>
     setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, status } : s));
 
-  const delay = ms => new Promise(r => setTimeout(r, ms));
-
   const runPipeline = async () => {
     if (!file || running) return;
     setRunning(true); setError(""); setResult(null);
     setSteps(PIPELINE_STEPS.map(s => ({ ...s, status: "idle" })));
     try {
-      updateStep(0, "loading"); await delay(600); updateStep(0, "success");
-      updateStep(1, "loading");
-      const { data } = await analyzeImage(file, sensitivity / 100);
-      await delay(400); updateStep(1, "success");
-      updateStep(2, "loading"); await delay(700); updateStep(2, "success");
-      updateStep(3, "loading"); await delay(600); updateStep(3, "success");
-      updateStep(4, "loading"); await delay(500); updateStep(4, "success");
-      setResult(data); setTab("features");
+      updateStep(0, "loading");
+      const { data } = await analyzeImage(file, sensitivity / 100, labelText, (job) => {
+        const stageIndex = job.progress < 15 ? 0 : job.progress < 40 ? 1 : job.progress < 70 ? 2 : job.progress < 90 ? 3 : 4;
+        setSteps(PIPELINE_STEPS.map((step, index) => ({ ...step, status: index < stageIndex ? "success" : index === stageIndex ? "loading" : "idle" })));
+      });
+      setSteps(PIPELINE_STEPS.map(step => ({ ...step, status: "success" })));
+      setResult(data); setConfirmedMaterial(""); setTab("features");
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
     } catch (err) {
       const msg = err?.response?.data?.detail || "Pipeline failed. Please try another image.";
@@ -128,8 +134,51 @@ export default function WasteAnalysis() {
     }
   };
 
+  const saveToInventory = async (event) => {
+    event.preventDefault();
+    if (!result || saveState.saving) return;
+    const uncertain = Number(result.material?.confidence || 0) < 0.7 || /uncertain|unknown/i.test(result.material?.fabric_type || "");
+    if (uncertain && !confirmedMaterial) {
+      setSaveState({ saving: false, message: "", error: "Please confirm the fabric type before saving this uncertain result." });
+      return;
+    }
+    setSaveState({ saving: true, message: "", error: "" });
+    try {
+      await createInventoryItem({
+        fabric_type: confirmedMaterial || result.material?.fabric_type || "Unclassified textile",
+        source: registerForm.source,
+        quantity: registerForm.quantity,
+        color: result.features?.color_name || "Not recorded",
+        condition: result.waste_classification?.category || "Pending review",
+        collection_date: registerForm.collection_date,
+        status: "Pending",
+        uploaded_by: "Current user",
+        assigned_to: "Recycling Facility",
+      });
+      setSaveState({ saving: false, message: "Batch saved to inventory.", error: "" });
+    } catch (err) {
+      setSaveState({ saving: false, message: "", error: err?.response?.data?.detail || "Batch could not be saved." });
+    }
+  };
+
+  const submitReview = async (event) => {
+    event.preventDefault();
+    if (!result?.analysis_id || reviewing) return;
+    setReviewing(true); setReviewMessage("");
+    try {
+      const { data } = await reviewAnalysis(result.analysis_id, review);
+      setResult(prev => ({ ...prev, review_status: data.review_status, final_destination: data.final_destination }));
+      setReviewMessage(`Decision saved: ${data.final_destination}`);
+    } catch (err) {
+      setReviewMessage(err?.response?.data?.detail || "Review could not be saved.");
+    } finally {
+      setReviewing(false);
+    }
+  };
+
   const catBadge = result ? (CATEGORY_BADGE[result.waste_classification?.category] || CATEGORY_BADGE.Recyclable) : "";
   const catIcon  = result ? (CATEGORY_ICON[result.waste_classification?.category]  || "🔄") : "";
+  const materialUncertain = Boolean(result && (Number(result.material?.confidence || 0) < 0.7 || /uncertain|unknown/i.test(result.material?.fabric_type || "")));
 
   // ── Image URL from backend (/static/uploads/...)
   const imageUrl = result
@@ -222,6 +271,9 @@ export default function WasteAnalysis() {
 
               {/* Sensitivity slider */}
               <div className="mt-6 border-t border-white/10 pt-5">
+                <label className="mb-4 grid gap-1.5 text-sm font-bold text-slate-300">Garment label or known composition <span className="font-normal text-slate-500">Optional</span>
+                  <input value={labelText} onChange={event => setLabelText(event.target.value)} placeholder="e.g. 80% cotton, 20% polyester" className="rounded-xl bg-white/8 px-3 py-2.5 font-normal text-white ring-1 ring-white/15 placeholder:text-slate-600" />
+                </label>
                 <div className="mb-2 flex items-center justify-between">
                   <label className="text-sm font-bold text-slate-300">AI Defect Sensitivity</label>
                   <span className="rounded-full bg-cyan-400/15 px-2.5 py-0.5 text-xs font-black text-cyan-400">{sensitivity}%</span>
@@ -329,8 +381,151 @@ export default function WasteAnalysis() {
                   </div>
                 </div>
 
+                {materialUncertain ? (
+                  <section className="rounded-3xl bg-amber-400/10 p-6 ring-1 ring-amber-400/30" aria-labelledby="confirm-fabric-title">
+                    <p className="text-xs font-black uppercase tracking-wider text-amber-300">Human confirmation required</p>
+                    <h3 id="confirm-fabric-title" className="mt-1 text-xl font-black text-white">The fabric prediction is uncertain</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">The AI predicted <strong>{result.material.fabric_type}</strong> at {(result.material.confidence * 100).toFixed(0)}% confidence. Select the fabric you can verify before saving the batch.</p>
+                    <label className="mt-4 grid gap-1.5 text-sm font-bold text-amber-100">Confirmed fabric type
+                      <select value={confirmedMaterial} onChange={event => { setConfirmedMaterial(event.target.value); setSaveState({ saving: false, message: "", error: "" }); }} className="rounded-xl bg-slate-900 px-4 py-3 text-white ring-1 ring-amber-300/30" required>
+                        <option value="">Select fabric type</option>
+                        {FABRIC_OPTIONS.map(fabric => <option key={fabric} value={fabric}>{fabric}</option>)}
+                      </select>
+                    </label>
+                    {confirmedMaterial && <p className="mt-3 rounded-xl bg-emerald-400/10 px-3 py-2 text-sm font-bold text-emerald-300">Human-confirmed material: {confirmedMaterial}</p>}
+                  </section>
+                ) : (
+                  <details className="rounded-2xl bg-white/5 p-4 text-sm text-slate-300 ring-1 ring-white/10">
+                    <summary className="cursor-pointer font-bold text-cyan-300">Is the predicted fabric incorrect?</summary>
+                    <label className="mt-3 grid gap-1.5">Choose the correct fabric type
+                      <select value={confirmedMaterial} onChange={event => setConfirmedMaterial(event.target.value)} className="rounded-xl bg-slate-900 px-4 py-3 text-white ring-1 ring-white/20">
+                        <option value="">Keep AI prediction: {result.material.fabric_type}</option>
+                        {FABRIC_OPTIONS.map(fabric => <option key={fabric} value={fabric}>{fabric}</option>)}
+                      </select>
+                    </label>
+                  </details>
+                )}
+
+                <section className="rounded-3xl bg-emerald-400/10 p-6 ring-1 ring-emerald-400/20">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div><p className="text-xs font-black uppercase tracking-wider text-emerald-300">Next step</p><h3 className="mt-1 text-xl font-black text-white">Register this analysed batch</h3><p className="mt-1 text-sm text-slate-400">Confirm its source, quantity{materialUncertain ? ", and fabric" : ""}, then add it to inventory.</p></div>
+                    <Link to="/inventory" className="text-sm font-bold text-emerald-300">View inventory →</Link>
+                  </div>
+                  <form onSubmit={saveToInventory} className="mt-5 grid gap-3 sm:grid-cols-3">
+                    <label className="grid gap-1 text-xs font-bold text-slate-300">Source<input required value={registerForm.source} onChange={event => setRegisterForm({ ...registerForm, source: event.target.value })} placeholder="Factory or unit" className="rounded-xl bg-slate-900 px-3 py-2.5 font-normal text-white ring-1 ring-white/20" /></label>
+                    <label className="grid gap-1 text-xs font-bold text-slate-300">Quantity<input required value={registerForm.quantity} onChange={event => setRegisterForm({ ...registerForm, quantity: event.target.value })} placeholder="e.g. 24 kg" className="rounded-xl bg-slate-900 px-3 py-2.5 font-normal text-white ring-1 ring-white/20" /></label>
+                    <label className="grid gap-1 text-xs font-bold text-slate-300">Collection date<input required type="date" value={registerForm.collection_date} onChange={event => setRegisterForm({ ...registerForm, collection_date: event.target.value })} className="rounded-xl bg-slate-900 px-3 py-2.5 font-normal text-white ring-1 ring-white/20" /></label>
+                    <button disabled={saveState.saving || Boolean(saveState.message)} className="rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-black text-slate-950 disabled:opacity-60 sm:col-span-3">{saveState.message || (saveState.saving ? "Saving…" : "Save batch to inventory")}</button>
+                  </form>
+                  {saveState.error && <p role="alert" className="mt-3 text-sm font-bold text-rose-300">{saveState.error}</p>}
+                </section>
+
+                {result.ai_predictions && (
+                  <section className="rounded-3xl bg-white/5 p-6 ring-1 ring-white/10" aria-live="polite">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-cyan-400">Development model</p>
+                        <h3 className="mt-1 text-lg font-black text-white">{result.ai_predictions.model}</h3>
+                        <p className="mt-1 text-xs text-slate-400">Version {result.ai_predictions.model_version}</p>
+                      </div>
+                      {result.ai_predictions.manual_review_required && (
+                        <span className="rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-xs font-black text-amber-300">
+                          Manual review required
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      {Object.entries(result.ai_predictions.predictions || {}).map(([head, prediction]) => (
+                        <div key={head} className="rounded-2xl bg-black/20 p-4 ring-1 ring-white/10">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{head}</p>
+                            <p className="text-sm font-black text-cyan-300">{(prediction.confidence * 100).toFixed(1)}%</p>
+                          </div>
+                          <p className="mt-1 text-xl font-black text-white">{prediction.label}</p>
+                          <div className="mt-3 space-y-1.5">
+                            {prediction.top_predictions.map((item) => (
+                              <div key={item.label} className="flex justify-between text-xs text-slate-400">
+                                <span>{item.label}</span><span>{(item.probability * 100).toFixed(1)}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-4 rounded-2xl bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-200">
+                      {result.ai_predictions.warning}
+                    </p>
+                    <p className="mt-3 text-xs leading-relaxed text-slate-400">{result.ai_disclaimer}</p>
+                  </section>
+                )}
+
+                {result.destination_intelligence && (
+                  <section className="rounded-3xl bg-white/5 p-6 ring-1 ring-white/10" aria-label="Explainable destination decision">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-emerald-400">Fused waste intelligence</p>
+                        <h3 className="mt-1 text-2xl font-black text-white">{result.destination_intelligence.destination}</h3>
+                        <p className="mt-1 text-sm text-slate-400">Calibrated confidence <span className="font-black text-emerald-300">{(result.destination_intelligence.confidence * 100).toFixed(1)}%</span></p>
+                      </div>
+                      <details className="text-xs text-slate-400"><summary className="cursor-pointer rounded-full bg-white/10 px-3 py-1 font-bold text-slate-300">How this was calculated</summary><p className="mt-2 max-w-xs rounded-xl bg-slate-950 p-3">The destination score combines 65% batch metadata with 35% visual evidence.</p></details>
+                    </div>
+                    <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-wider text-slate-500">Destination probabilities</p>
+                        <div className="mt-3 space-y-2">
+                          {result.destination_intelligence.probabilities.map(item => (
+                            <div key={item.label}>
+                              <div className="flex justify-between text-xs text-slate-300"><span>{item.label}</span><span>{(item.probability * 100).toFixed(1)}%</span></div>
+                              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-emerald-400" style={{ width: `${item.probability * 100}%` }} /></div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-wider text-slate-500">Why this decision</p>
+                        <ul className="mt-3 space-y-2 text-sm text-slate-300">
+                          {result.destination_intelligence.reasoning.map(reason => <li key={reason} className="rounded-xl bg-black/20 px-3 py-2">{reason}</li>)}
+                        </ul>
+                      </div>
+                    </div>
+                    {result.destination_intelligence.manual_review_required && <p className="mt-4 rounded-2xl bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-200">{result.destination_intelligence.warning}</p>}
+                  </section>
+                )}
+
+                {result.analysis_id && (
+                  <section className="rounded-3xl bg-white/5 p-6 ring-1 ring-white/10">
+                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-400">Human review</p>
+                    <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-lg font-black text-white">Confirm the operational decision</h3>
+                      <span className="text-xs text-slate-400">{result.analysis_id}</span>
+                    </div>
+                    {result.review_status === "pending" ? (
+                      <form onSubmit={submitReview} className="mt-4 space-y-3">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <select value={review.decision} onChange={e => setReview({ ...review, decision: e.target.value })} className="rounded-xl bg-slate-900 px-3 py-2 text-sm text-white ring-1 ring-white/20">
+                            <option value="accept">Accept AI destination</option>
+                            <option value="override">Override destination</option>
+                          </select>
+                          {review.decision === "override" && (
+                            <select value={review.destination} onChange={e => setReview({ ...review, destination: e.target.value })} className="rounded-xl bg-slate-900 px-3 py-2 text-sm text-white ring-1 ring-white/20">
+                              {["Reuse", "Export", "Repair", "Remake", "Recycle", "Energy Recovery"].map(value => <option key={value}>{value}</option>)}
+                            </select>
+                          )}
+                        </div>
+                        <textarea required minLength={2} maxLength={1000} rows={3} value={review.reason} onChange={e => setReview({ ...review, reason: e.target.value })} placeholder="Reason or reviewer notes" className="w-full rounded-xl bg-slate-900 px-3 py-2 text-sm text-white ring-1 ring-white/20" />
+                        <button disabled={reviewing} className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-50">{reviewing ? "Saving…" : "Confirm decision"}</button>
+                      </form>
+                    ) : (
+                      <p className="mt-4 rounded-xl bg-emerald-400/10 p-3 text-sm font-bold text-emerald-300">{result.review_status}: {result.final_destination}</p>
+                    )}
+                    {reviewMessage && <p className="mt-3 text-xs text-slate-300" aria-live="polite">{reviewMessage}</p>}
+                  </section>
+                )}
+
                 {/* Tabbed analysis */}
-                <div className="rounded-3xl bg-white/5 p-6 ring-1 ring-white/10 backdrop-blur-md">
+                <details className="rounded-3xl bg-white/5 p-6 ring-1 ring-white/10 backdrop-blur-md">
+                  <summary className="cursor-pointer text-base font-black text-white">Advanced analysis details</summary>
+                  <div className="mt-5">
                   <div className="mb-5 flex items-center justify-between">
                     <div>
                       <h3 className="text-base font-black text-white">AI Analysis Results</h3>
@@ -493,7 +688,8 @@ export default function WasteAnalysis() {
                       </div>
                     </div>
                   )}
-                </div>
+                  </div>
+                </details>
               </div>
             )}
           </div>

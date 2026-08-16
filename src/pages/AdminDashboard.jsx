@@ -1,34 +1,25 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { getInventory } from "../services/inventoryService";
-import { registerUser } from "../services/authService";
-import { deleteUser, getSystemStatus, getUsers } from "../services/userService";
+import { getSystemStatus } from "../services/userService";
+import { getUsers } from "../services/userService";
 import { downloadDedicatedReport } from "../services/sustainabilityService";
-
-const emptyUser = {
-  name: "",
-  email: "",
-  password: "",
-  role: "operator",
-};
 
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [batches, setBatches] = useState([]);
-  const [userForm, setUserForm] = useState(emptyUser);
-  const [message, setMessage] = useState("");
   const [system, setSystem] = useState(null);
   const [reportBusy, setReportBusy] = useState("");
 
   const loadData = async () => {
-    const [userResponse, inventoryResponse, systemResponse] = await Promise.all([
-      getUsers(),
+    const [inventoryResponse, systemResponse, userResponse] = await Promise.all([
       getInventory(),
       getSystemStatus(),
+      getUsers(),
     ]);
-    setUsers(userResponse.data);
     setBatches(inventoryResponse.data);
     setSystem(systemResponse.data);
+    setUsers(userResponse.data);
   };
 
   useEffect(() => {
@@ -37,27 +28,6 @@ function AdminDashboard() {
 
   const totalRecycled = batches.filter((batch) => batch.status === "Recycled").length;
   const totalGenerated = batches.length;
-
-  const roleCounts = useMemo(() => {
-    return users.reduce((summary, user) => {
-      summary[user.role] = (summary[user.role] || 0) + 1;
-      return summary;
-    }, {});
-  }, [users]);
-
-  const createUser = async (event) => {
-    event.preventDefault();
-    setMessage("");
-    await registerUser(userForm);
-    setUserForm(emptyUser);
-    setMessage("User created successfully.");
-    await loadData();
-  };
-
-  const removeUser = async (id) => {
-    await deleteUser(id);
-    await loadData();
-  };
 
   const downloadReport = async (type, format) => {
     const key = `${type}-${format}`;
@@ -77,8 +47,8 @@ function AdminDashboard() {
     <section className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
         {[
-          ["Total Users", users.length],
-          ["Total Waste Generated", totalGenerated],
+          ["Total Waste Batches", totalGenerated],
+          ["Processing", batches.filter((batch) => batch.status === "Processing").length],
           ["Total Recycled", totalRecycled],
         ].map(([label, value]) => (
           <div key={label} className="rounded-3xl bg-white p-5 shadow-md ring-1 ring-slate-200">
@@ -88,72 +58,22 @@ function AdminDashboard() {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-        <form onSubmit={createUser} className="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
-            User Management
-          </p>
-          <h2 className="mt-1 text-2xl font-black text-slate-950">
-            Create Platform User
-          </h2>
-          <div className="mt-5 grid gap-3">
-            <input className="rounded-2xl border border-slate-200 px-4 py-3" placeholder="Name" value={userForm.name} onChange={(e) => setUserForm({ ...userForm, name: e.target.value })} required />
-            <input className="rounded-2xl border border-slate-200 px-4 py-3" type="email" placeholder="Email" value={userForm.email} onChange={(e) => setUserForm({ ...userForm, email: e.target.value })} required />
-            <input className="rounded-2xl border border-slate-200 px-4 py-3" type="password" placeholder="Password" value={userForm.password} onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} required />
-            <select className="rounded-2xl border border-slate-200 px-4 py-3" value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}>
-              <option value="manufacturer">Manufacturer</option>
-              <option value="operator">Recycling Facility</option>
-              <option value="manager">Sustainability Officer</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          {message && <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">{message}</p>}
-          <button className="mt-5 w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 px-5 py-3 font-black text-white shadow-lg shadow-indigo-200">
-            Create User
-          </button>
-        </form>
-
-        <div className="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
-          <h2 className="text-2xl font-black text-slate-950">Users & Roles</h2>
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="text-slate-500">
-                <tr>
-                  <th className="p-3">Name</th>
-                  <th className="p-3">Email</th>
-                  <th className="p-3">Role</th>
-                  <th className="p-3">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id} className="border-t border-slate-100">
-                    <td className="p-3 font-bold">{user.name}</td>
-                    <td className="p-3">{user.email}</td>
-                    <td className="p-3">{user.role}</td>
-                    <td className="p-3">
-                      <button onClick={() => removeUser(user.id)} className="rounded-xl bg-rose-100 px-3 py-2 font-bold text-rose-700">
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      <section className="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
+        <div><p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">Read-only directory</p><h2 className="mt-1 text-2xl font-black text-slate-950">Registered users</h2><p className="mt-1 text-sm text-slate-500">Roles are chosen during registration. This directory does not change or delete accounts.</p></div>
+        <div className="mt-5 overflow-x-auto">
+          <table className="min-w-full text-left text-sm"><thead className="text-slate-500"><tr><th className="p-3">Name</th><th className="p-3">Email</th><th className="p-3">Role</th><th className="p-3">Organization</th></tr></thead>
+            <tbody>{users.map((user) => <tr key={user.id} className="border-t border-slate-100"><td className="p-3 font-bold text-slate-900">{user.name}</td><td className="p-3">{user.email}</td><td className="p-3 capitalize">{user.role}</td><td className="p-3">{user.organization_id || "—"}</td></tr>)}{!users.length && <tr><td colSpan="4" className="p-8 text-center text-slate-500">No registered users.</td></tr>}</tbody>
+          </table>
         </div>
-      </div>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="rounded-3xl bg-gradient-to-br from-indigo-700 to-slate-950 p-6 text-white shadow-xl">
           <h2 className="text-2xl font-black">Platform Analytics</h2>
           <div className="mt-4 space-y-3">
-            {Object.entries(roleCounts).map(([role, count]) => (
-              <div key={role} className="flex justify-between rounded-2xl bg-white/10 p-3">
-                <span>{role}</span>
-                <span className="font-black">{count}</span>
-              </div>
-            ))}
+            <div className="flex justify-between rounded-2xl bg-white/10 p-3"><span>Registered batches</span><span className="font-black">{totalGenerated}</span></div>
+            <div className="flex justify-between rounded-2xl bg-white/10 p-3"><span>Processing</span><span className="font-black">{batches.filter((batch) => batch.status === "Processing").length}</span></div>
+            <div className="flex justify-between rounded-2xl bg-white/10 p-3"><span>Recycled</span><span className="font-black">{totalRecycled}</span></div>
           </div>
         </div>
 

@@ -47,9 +47,9 @@ def circularity_category(score: float) -> str:
         return "Excellent Recovery Potential"
     if bounded >= 75:
         return "High Recovery Potential"
-    if bounded >= 60:
+    if bounded >= 50:
         return "Moderate Recovery Potential"
-    if bounded >= 40:
+    if bounded >= 25:
         return "Limited Recovery Potential"
     return "Disposal Recommended"
 

@@ -1,16 +1,29 @@
-# React + Vite
+# Textile Waste Intelligence Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + FastAPI + PostgreSQL platform for image-assisted garment triage, inventory, circularity scoring, sustainability estimates, reports, and human-reviewed AI decisions.
 
-Currently, two official plugins are available:
+## Local run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Copy `.env.example` to `.env` and `backend/.env`; replace secrets.
+2. Create `backend/.venv`, install `backend/requirements.txt`, then run `uvicorn main:app --reload` from `backend`.
+3. Run `npm install` and `npm run dev` from the project root.
+4. Open `http://localhost:5173`; API documentation is at `http://localhost:8000/docs`.
 
-## React Compiler
+## Docker
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Run `docker compose up --build` after creating `.env`. Web runs on port 5173 and API on port 8000.
 
-## Expanding the ESLint configuration
+## Dataset and training
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+The pinned CC BY 4.0 source is `fnauman/fashion-second-hand-front-only-rgb`. Run `ml/data/download_dataset.py`, the validation/cleaning scripts, and then `ml/training/train_multitask.py --backbone b0 --allow-cpu` (omit `--allow-cpu` on GPU). B0 and B2 measured results are stored under `ml/artifacts/multitask`.
+
+The promoted B0 checkpoint is a development model. Its quality gate failed, so every prediction is probabilistic and human review is required. RGB imagery is not laboratory fibre identification. Environmental outputs are configured estimates, not measurements.
+
+## Validation
+
+- Backend: `backend/.venv/Scripts/python -m pytest -q`
+- Frontend: `npm run lint && npm run build`
+- Health: `GET /health`
+- Model: `GET /api/model/multitask/status`
+
+See [docs](docs/architecture.md) for architecture, API, ML, database, deployment, and the measured model card.

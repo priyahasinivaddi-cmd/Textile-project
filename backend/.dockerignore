@@ -1,0 +1,11 @@
+.venv
+.pytest_cache
+tests
+__pycache__
+**/__pycache__
+**/*.pyc
+static/uploads
+static/jobs
+package-lock.json
+package.json
+server.js

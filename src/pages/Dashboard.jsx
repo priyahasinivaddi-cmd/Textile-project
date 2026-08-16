@@ -10,6 +10,7 @@ import ManagerDashboard from "./ManagerDashboard";
 import ManufacturerDashboard from "./ManufacturerDashboard";
 import OperatorDashboard from "./OperatorDashboard";
 import NotificationCenter from "../components/NotificationCenter";
+import GlobalSearch from "../components/GlobalSearch";
 
 const roleLabels = {
   admin: "Admin",
@@ -36,10 +37,10 @@ const Dashboard = () => {
     operator: <OperatorDashboard />,
   };
   const roleNavigation = {
-    admin: [["Overview", "#role-dashboard"], ["All Waste Details", "#waste-details"], ["Sustainability", "#sustainability-intelligence"]],
+    admin: [["Overview", "#role-dashboard"], ["All Waste Details", "#waste-details"], ["Sustainability", "#sustainability-intelligence"], ["Model Insights", "/model-insights"], ["Training Feedback", "/training-feedback"]],
     manager: [["Sustainability", "#sustainability-intelligence"], ["Resource Conservation", "#resource-conservation"], ["Waste Overview", "#role-dashboard"], ["Circularity Decisions", "#circularity-decisions"]],
-    manufacturer: [["Overview", "#role-dashboard"], ["Register Waste", "/upload"], ["Inventory", "/inventory"], ["Image Analysis", "/analyze"]],
-    operator: [["Overview", "#role-dashboard"], ["Inventory", "/inventory"], ["Image Analysis", "/analyze"]],
+    manufacturer: [["Overview", "#role-dashboard"], ["Analyse & register", "/analyze"], ["Inventory", "/inventory"]],
+    operator: [["Overview", "#role-dashboard"], ["Inventory", "/inventory"], ["Analyse textile", "/analyze"]],
   };
 
   return (
@@ -64,7 +65,7 @@ const Dashboard = () => {
             </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
             <NotificationCenter user={user} />
             <button
               onClick={logout}
@@ -81,6 +82,7 @@ const Dashboard = () => {
           ) : (
             <Link key={label} to={destination} className="rounded-xl px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-cyan-50 hover:text-cyan-800">{label}</Link>
           ))}
+          <div className="ml-auto w-full md:w-80"><GlobalSearch /></div>
         </nav>
 
         {role === "admin" && <div id="waste-details"><WasteBatchDetails /></div>}

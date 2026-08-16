@@ -16,9 +16,9 @@ def test_circularity_weighted_formula():
 @pytest.mark.parametrize(("score", "expected"), [
     (100, "Excellent Recovery Potential"), (90, "Excellent Recovery Potential"),
     (89.99, "High Recovery Potential"), (75, "High Recovery Potential"),
-    (74.99, "Moderate Recovery Potential"), (60, "Moderate Recovery Potential"),
-    (59.99, "Limited Recovery Potential"), (40, "Limited Recovery Potential"),
-    (39.99, "Disposal Recommended"), (0, "Disposal Recommended"),
+    (74.99, "Moderate Recovery Potential"), (50, "Moderate Recovery Potential"),
+    (49.99, "Limited Recovery Potential"), (25, "Limited Recovery Potential"),
+    (24.99, "Disposal Recommended"), (0, "Disposal Recommended"),
 ])
 def test_category_boundaries(score, expected):
     assert circularity_category(score) == expected

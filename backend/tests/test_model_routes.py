@@ -9,6 +9,7 @@ from PIL import Image
 
 from app.routes import model as model_routes
 from app.services.model_service import ModelService
+from app.utils.permissions import get_current_user
 
 
 class FakeModel:
@@ -35,6 +36,7 @@ def make_client(monkeypatch) -> TestClient:
     monkeypatch.setattr(model_routes, "model_service", make_service())
     app = FastAPI()
     app.include_router(model_routes.router)
+    app.dependency_overrides[get_current_user] = lambda: object()
     return TestClient(app)
 
 

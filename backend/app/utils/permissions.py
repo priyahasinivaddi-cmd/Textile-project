@@ -1,7 +1,6 @@
 """JWT identity resolution and role-aware waste access helpers."""
 
 from fastapi import Depends, HTTPException, status
-from sqlalchemy import or_
 from sqlalchemy.orm import Query, Session
 
 from app.database import get_db
@@ -22,20 +21,17 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 
+def require_admin(user: User = Depends(get_current_user)) -> User:
+    if user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Administrator access required")
+    return user
+
+
 def can_access_batch(user: User, batch: InventoryItem) -> bool:
-    if user.role == "admin":
-        return True
-    if user.role == "manager":
-        if user.organization_id is None:
-            return True
-        return batch.owner is None or batch.owner.organization_id == user.organization_id
-    if user.role == "manufacturer":
-        return batch.owner_id == user.id
-    if user.role == "operator":
-        assigned = str(batch.assigned_to or "").strip().lower()
-        uploaded = str(batch.uploaded_by or "").strip().lower()
-        return assigned in {"recycling facility", user.name.lower(), user.email.lower()} or uploaded == "recycling facility"
-    return False
+    # Waste inventory is a shared operational register. Authentication and a
+    # valid platform role are sufficient to see any batch, regardless of who
+    # uploaded it. The uploader is retained on each record for accountability.
+    return user.role in VALID_ROLES
 
 
 def require_batch_access(user: User, batch: InventoryItem) -> None:
@@ -44,17 +40,4 @@ def require_batch_access(user: User, batch: InventoryItem) -> None:
 
 
 def scope_inventory_query(query: Query, user: User) -> Query:
-    if user.role == "admin":
-        return query
-    if user.role == "manager":
-        if user.organization_id is None:
-            return query
-        return query.filter(
-            or_(
-                InventoryItem.owner_id.is_(None),
-                InventoryItem.owner.has(User.organization_id == user.organization_id),
-            )
-        )
-    if user.role == "manufacturer":
-        return query.filter(InventoryItem.owner_id == user.id)
-    return query.filter(or_(InventoryItem.assigned_to.in_(["Recycling Facility", user.name, user.email]), InventoryItem.uploaded_by == "Recycling Facility"))
+    return query

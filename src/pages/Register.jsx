@@ -34,18 +34,22 @@ function Register() {
         </p>
         <h1 className="mt-2 text-4xl font-black text-slate-950">Register</h1>
         <p className="mt-2 text-slate-500">
-          Choose the correct operational role so the system opens the right dashboard after login.
+          Choose the workspace that matches your responsibilities.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 grid gap-4">
-          <input className="rounded-2xl border border-slate-200 px-4 py-3" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-          <input className="rounded-2xl border border-slate-200 px-4 py-3" placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-          <input className="rounded-2xl border border-slate-200 px-4 py-3" placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
-          <select className="rounded-2xl border border-slate-200 px-4 py-3" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-            <option value="manufacturer">Manufacturer</option>
-            <option value="operator">Recycling Facility</option>
-            <option value="manager">Sustainability Officer</option>
-          </select>
+          <label className="grid gap-1 text-sm font-bold text-slate-700">Full name<input className="rounded-2xl border border-slate-200 px-4 py-3 font-normal" placeholder="Your name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></label>
+          <label className="grid gap-1 text-sm font-bold text-slate-700">Email address<input className="rounded-2xl border border-slate-200 px-4 py-3 font-normal" placeholder="name@company.com" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
+          <label className="grid gap-1 text-sm font-bold text-slate-700">Password<input className="rounded-2xl border border-slate-200 px-4 py-3 font-normal" placeholder="Create a secure password" type="password" minLength="8" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required /></label>
+          <label className="grid gap-1 text-sm font-bold text-slate-700">Account role
+            <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+              <option value="operator">Recycling Facility</option>
+              <option value="manufacturer">Manufacturer</option>
+              <option value="manager">Sustainability Officer</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </label>
+          <p className="rounded-2xl bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900 ring-1 ring-amber-100">Roles control access to operational and administrative features. Select the role authorized for your work.</p>
           {error && <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</p>}
           <button className="rounded-2xl bg-gradient-to-r from-cyan-600 to-emerald-500 px-5 py-3 font-black text-white shadow-lg shadow-cyan-200">
             Register
@@ -58,6 +62,7 @@ function Register() {
             Login here
           </Link>
         </p>
+        <Link className="mt-3 inline-block text-sm font-bold text-slate-500" to="/">← Back to home</Link>
       </section>
     </main>
   );

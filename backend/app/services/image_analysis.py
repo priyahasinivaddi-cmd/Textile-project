@@ -26,7 +26,9 @@ from app.services.material_classifier import classify_material
 from app.services.waste_classifier import classify_waste
 from app.services.recommendation_engine import generate_recommendations
 from app.services.model_service import model_service
+from app.services.multitask_model_service import multitask_model_service
 from app.services.label_composition import parse_label_composition
+from app.services.destination_model_service import destination_model_service
 
 
 logger = logging.getLogger(__name__)
@@ -158,14 +160,28 @@ def analyze_image_file(image_path: str, sensitivity: float = 0.5, label_text: st
     # Stage 2 — Material classification. Prefer the image-trained composition
     # model; retain the older colour/texture classifier as a safe fallback.
     composition_prediction = None
+    multitask_prediction = None
     try:
         with open(image_path, "rb") as image_file:
-            # predict() loads the production model on first use. Checking the
-            # model attributes before this call caused normal uploads to skip
-            # the trained model entirely on a fresh backend start.
-            composition_prediction = model_service.predict(image_file.read())
+            image_bytes = image_file.read()
+            multitask_prediction = multitask_model_service.predict(image_bytes)
+            material_head = multitask_prediction["predictions"]["material"]
+            composition_prediction = {
+                "predicted_fabric": "Uncertain" if material_head["low_confidence"] else material_head["label"],
+                "confidence": material_head["confidence"] * 100,
+                "top_predictions": [
+                    {"fabric": item["label"], "confidence": item["probability"] * 100}
+                    for item in material_head["top_predictions"]
+                ],
+                "low_confidence": material_head["low_confidence"],
+            }
     except (OSError, RuntimeError, ValueError):
-        logger.exception("Composition model failed; using legacy material classifier")
+        logger.exception("Multitask model failed; trying the legacy composition model")
+        try:
+            with open(image_path, "rb") as image_file:
+                composition_prediction = model_service.predict(image_file.read())
+        except (OSError, RuntimeError, ValueError):
+            logger.exception("Legacy composition model failed; using deterministic fallback")
     material = classify_material(features, composition_prediction)
     material["alternatives"] = (composition_prediction or {}).get("top_predictions", [])
     label_material = parse_label_composition(label_text)
@@ -181,6 +197,13 @@ def analyze_image_file(image_path: str, sensitivity: float = 0.5, label_text: st
 
     # Stage 4 — Recycling recommendations
     recommendations = generate_recommendations(waste, material)
+
+    destination_intelligence = None
+    try:
+        destination_intelligence = destination_model_service.predict(features, material, multitask_prediction)
+        waste["category"] = destination_intelligence["destination"]
+    except (RuntimeError, ValueError, OSError):
+        logger.exception("Structured destination model failed; retaining deterministic decision")
 
     # Build the public-facing features dict (strip internal helper keys)
     public_features = {
@@ -199,4 +222,7 @@ def analyze_image_file(image_path: str, sensitivity: float = 0.5, label_text: st
         "material":            material,
         "waste_classification": waste,
         "recommendations":     recommendations,
+        "ai_predictions":      multitask_prediction,
+        "destination_intelligence": destination_intelligence,
+        "ai_disclaimer":       "AI-generated assessment. Predictions are probabilistic and should be reviewed by qualified personnel for operational recycling decisions.",
     }

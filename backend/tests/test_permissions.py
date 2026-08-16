@@ -10,7 +10,7 @@ def test_unassigned_sustainability_officer_can_access_legacy_batch():
     assert can_access_batch(officer, legacy_batch) is True
 
 
-def test_organization_officer_can_access_legacy_and_organization_batches():
+def test_manager_can_access_batches_across_organizations():
     officer = SimpleNamespace(role="manager", organization_id=7)
     legacy_batch = SimpleNamespace(owner=None)
     organization_batch = SimpleNamespace(owner=SimpleNamespace(organization_id=7))
@@ -18,4 +18,15 @@ def test_organization_officer_can_access_legacy_and_organization_batches():
 
     assert can_access_batch(officer, legacy_batch) is True
     assert can_access_batch(officer, organization_batch) is True
-    assert can_access_batch(officer, other_batch) is False
+    assert can_access_batch(officer, other_batch) is True
+
+
+def test_manufacturer_can_access_every_batch():
+    manufacturer = SimpleNamespace(role="manufacturer", id=21)
+    legacy_batch = SimpleNamespace(owner_id=None)
+    own_batch = SimpleNamespace(owner_id=21)
+    other_batch = SimpleNamespace(owner_id=99)
+
+    assert can_access_batch(manufacturer, legacy_batch) is True
+    assert can_access_batch(manufacturer, own_batch) is True
+    assert can_access_batch(manufacturer, other_batch) is True

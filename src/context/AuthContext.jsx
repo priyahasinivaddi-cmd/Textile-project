@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext();
 
@@ -18,6 +18,17 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
     setUser(null);
   };
+
+  useEffect(() => {
+    const refreshed = (event) => setUser(event.detail);
+    const expired = () => setUser(null);
+    window.addEventListener("auth-token-refreshed", refreshed);
+    window.addEventListener("auth-session-expired", expired);
+    return () => {
+      window.removeEventListener("auth-token-refreshed", refreshed);
+      window.removeEventListener("auth-session-expired", expired);
+    };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
