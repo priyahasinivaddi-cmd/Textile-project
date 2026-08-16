@@ -1,13 +1,18 @@
 import axios from "axios";
-
-const baseURL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+import { API_BASE_URL } from "./apiConfig";
 
 const API = axios.create({
-  baseURL,
+  baseURL: API_BASE_URL,
 });
 
 // 🔥 ADD THIS (JWT TOKEN)
 API.interceptors.request.use((config) => {
+  if (!API_BASE_URL && import.meta.env.PROD) {
+    return Promise.reject(
+      new Error("The production API is not configured. Set VITE_API_URL in Vercel and redeploy."),
+    );
+  }
+
   const user = JSON.parse(localStorage.getItem("user"));
   const token = user?.access_token || user?.token;
 
@@ -24,7 +29,7 @@ API.interceptors.response.use(response => response, async (error) => {
   const user = JSON.parse(localStorage.getItem("user"));
   if (error.response?.status !== 401 || request?._retried || !user?.refresh_token) return Promise.reject(error);
   request._retried = true;
-  refreshRequest ||= axios.post(`${baseURL}/user/refresh`, { refresh_token: user.refresh_token })
+  refreshRequest ||= axios.post(`${API_BASE_URL}/user/refresh`, { refresh_token: user.refresh_token })
     .then(({ data }) => {
       const updated = { ...user, ...data };
       localStorage.setItem("user", JSON.stringify(updated));

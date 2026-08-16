@@ -13,6 +13,15 @@ React + FastAPI + PostgreSQL platform for image-assisted garment triage, invento
 
 Run `docker compose up --build` after creating `.env`. Web runs on port 5173 and API on port 8000.
 
+## Vercel frontend deployment
+
+1. Deploy the FastAPI backend and PostgreSQL database to publicly reachable services.
+2. In Vercel project settings, add `VITE_API_URL=https://your-backend.example.com` for Production and Preview.
+3. On the backend, set `CORS_ORIGINS=https://textile-waste-management.vercel.app` (plus any preview domains you intentionally allow).
+4. Redeploy after changing environment variables; Vite embeds `VITE_*` values during the build.
+
+The included `vercel.json` sends client-side routes such as `/login` and `/dashboard` to the React application instead of returning a Vercel 404.
+
 ## Dataset and training
 
 The pinned CC BY 4.0 source is `fnauman/fashion-second-hand-front-only-rgb`. Run `ml/data/download_dataset.py`, the validation/cleaning scripts, and then `ml/training/train_multitask.py --backbone b0 --allow-cpu` (omit `--allow-cpu` on GPU). B0 and B2 measured results are stored under `ml/artifacts/multitask`.

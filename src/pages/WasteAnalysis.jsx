@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { analyzeImage, reviewAnalysis } from "../services/pipelineService";
 import { createInventoryItem } from "../services/inventoryService";
+import { resolveApiUrl } from "../services/apiConfig";
 
 // ─── Pipeline step definitions ─────────────────────────────────────────────
 const PIPELINE_STEPS = [
@@ -181,9 +182,7 @@ export default function WasteAnalysis() {
   const materialUncertain = Boolean(result && (Number(result.material?.confidence || 0) < 0.7 || /uncertain|unknown/i.test(result.material?.fabric_type || "")));
 
   // ── Image URL from backend (/static/uploads/...)
-  const imageUrl = result
-    ? `http://127.0.0.1:8000${result.image_url}`
-    : null;
+  const imageUrl = result ? resolveApiUrl(result.image_url) : null;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 px-4 py-8 sm:px-6 lg:px-8">
