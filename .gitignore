@@ -79,3 +79,4 @@ ml/evaluation/*.json
 
 .vercel
 .env*
+!.env.aws-demo.example
