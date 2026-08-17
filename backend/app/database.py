@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 load_dotenv()
 
@@ -12,7 +13,16 @@ DATABASE_URL = os.getenv(
     "postgresql://postgres:1234@localhost:5432/textile_db",
 )
 
-engine = create_engine(DATABASE_URL)
+engine_options = {}
+if os.getenv("APP_ENV", "development").lower() == "production":
+    # Vercel containers scale horizontally and connect through Supabase's
+    # transaction pooler. Avoid keeping a second client-side pool per instance.
+    engine_options["poolclass"] = NullPool
+    engine_options["connect_args"] = {
+        "sslmode": os.getenv("DB_SSLMODE", "require")
+    }
+
+engine = create_engine(DATABASE_URL, **engine_options)
 SessionLocal = sessionmaker(bind=engine)
 
 Base = declarative_base()

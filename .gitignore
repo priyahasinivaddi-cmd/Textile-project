@@ -76,3 +76,6 @@ ml/artifacts/
 ml/experiments/records/
 ml/evaluation/*.json
 *.joblib
+
+.vercel
+.env*

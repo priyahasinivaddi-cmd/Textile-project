@@ -13,14 +13,19 @@ React + FastAPI + PostgreSQL platform for image-assisted garment triage, invento
 
 Run `docker compose up --build` after creating `.env`. Web runs on port 5173 and API on port 8000.
 
-## Vercel frontend deployment
+## Vercel Docker deployment
 
-1. Deploy the FastAPI backend and PostgreSQL database to publicly reachable services.
-2. In Vercel project settings, add `VITE_API_URL=https://your-backend.example.com` for Production and Preview.
-3. On the backend, set `CORS_ORIGINS=https://textile-waste-management.vercel.app` (plus any preview domains you intentionally allow).
-4. Redeploy after changing environment variables; Vite embeds `VITE_*` values during the build.
+The repository includes a Vercel container for the frontend (`Dockerfile.vercel`) and one for the API (`backend/Dockerfile.vercel`). Deploy them as two Vercel projects connected to the same Git repository:
 
-The included `vercel.json` sends client-side routes such as `/login` and `/dashboard` to the React application instead of returning a Vercel 404.
+1. Create the API project with **Root Directory** set to `backend`. Add `APP_ENV=production`, a strong `SECRET_KEY`, the Supabase transaction-pooler `DATABASE_URL`, `DB_SSLMODE=require`, `TASK_MODE=local`, and the server-only S3 storage settings. Deploy it and copy its HTTPS URL.
+2. Create the web project with **Root Directory** left at the repository root. Add `VITE_API_URL` with the API project's HTTPS URL. Deploy it and copy its HTTPS URL.
+3. In the API project, set `CORS_ORIGINS` to the exact web-project URL and redeploy both projects.
+
+Vercel detects each `Dockerfile.vercel`, builds the image, and routes the project to its HTTP container. The frontend Nginx configuration handles React routes such as `/login` and `/dashboard`.
+
+Docker Compose remains the local/full-stack setup. Its PostgreSQL, Redis, Celery worker, and persistent volumes are not deployed by these two web containers. Production must use an external PostgreSQL database and S3-compatible upload storage. Long-running Celery work requires a separate worker host; `TASK_MODE=local` keeps jobs inside API requests and is the compatible Vercel setting.
+
+For Supabase Storage use `STORAGE_BACKEND=s3`, `S3_BUCKET=garment-uploads`, `S3_REGION=ap-south-1`, and `S3_ENDPOINT_URL=https://sgrhnvthiydiolldpiwg.storage.supabase.co/storage/v1/s3`. Set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` only in the API project's Vercel environment; never expose them through a `VITE_*` variable.
 
 ## Dataset and training
 
