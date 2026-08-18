@@ -9,7 +9,7 @@ const API = axios.create({
 API.interceptors.request.use((config) => {
   if (!API_BASE_URL && import.meta.env.PROD) {
     return Promise.reject(
-      new Error("The production API is not configured. Set VITE_API_URL in Vercel and redeploy."),
+      new Error("The production API is not configured. Set PUBLIC_ORIGIN in .env.aws-demo and rebuild the AWS deployment."),
     );
   }
 

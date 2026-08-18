@@ -12,15 +12,11 @@
 
 Terminate TLS at a trusted reverse proxy or load balancer. Do not expose PostgreSQL or Redis publicly. Back up the PostgreSQL and upload volumes, test restoration, and mount only reviewed model artifacts.
 
-## Vercel containers
+## AWS EC2 demo
 
-Use two Vercel projects from this repository. The frontend project uses the repository root and `Dockerfile.vercel`; the API project uses `backend` as its Root Directory and `backend/Dockerfile.vercel`.
+Use `docker-compose.aws-demo.yml` to run the complete stack on one AWS EC2 host. The AWS-specific environment template is `.env.aws-demo.example`, and the step-by-step server setup is in [aws-demo.md](aws-demo.md).
 
-The API uses the Supabase transaction pooler because Vercel is autoscaling and IPv4-based. Set its pooler `DATABASE_URL`, `DB_SSLMODE=require`, `APP_ENV=production`, `SECRET_KEY`, `CORS_ORIGINS`, `TASK_MODE=local`, and S3-compatible storage variables in the API project's Vercel environment. Set the frontend project's `VITE_API_URL` to the deployed API HTTPS URL. Environment-variable changes require a redeployment.
-
-Supabase Storage uses the private `garment-uploads` bucket. Its S3 access key and secret are server-only credentials that bypass Storage RLS, so store them only as `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the API project. Use `S3_REGION=ap-south-1` and `S3_ENDPOINT_URL=https://sgrhnvthiydiolldpiwg.storage.supabase.co/storage/v1/s3`.
-
-Vercel web containers do not replace the PostgreSQL, Redis, Celery worker, or persistent volumes in `docker-compose.yml`. Host long-running workers separately if asynchronous Celery processing is required.
+This layout serves the frontend and API from the same origin, keeps PostgreSQL and Redis off public ports, runs asynchronous work in Celery, and persists the database, Redis data, and uploads in named Docker volumes. It is suitable for a demo; a production, highly available deployment should move state to managed AWS services and terminate TLS at a load balancer or trusted reverse proxy.
 
 ## Release policy
 

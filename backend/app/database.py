@@ -15,8 +15,8 @@ DATABASE_URL = os.getenv(
 
 engine_options = {}
 if os.getenv("APP_ENV", "development").lower() == "production":
-    # Vercel containers scale horizontally and connect through Supabase's
-    # transaction pooler. Avoid keeping a second client-side pool per instance.
+    # Production deployments may connect through a managed transaction pooler.
+    # Avoid keeping a second client-side pool per application instance.
     engine_options["poolclass"] = NullPool
     engine_options["connect_args"] = {
         "sslmode": os.getenv("DB_SSLMODE", "require")
